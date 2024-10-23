@@ -1,0 +1,138 @@
+---
+title: "Using Spatial Lag, Spatial Error and Geographically Weighted Regression to Predict Median House Values in Philadelphia Block Groups"
+author: "Emily Zhou, Ziyi Guo, Emma Jiang"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: simplex
+    toc: yes
+    toc_float: yes
+    code_folding: hide
+    code_download: yes
+bibliography: references.bib
+csl: apa.csl 
+
+editor_options:
+  markdown:
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+options(scipen = 999)
+
+library(tidyverse)
+library(sf)
+library(here)
+library(spdep)
+library(spgwr)
+library(spatialreg)
+library(whitestrap)
+library(lmtest)
+library(tseries)
+```
+
+
+```{r}
+
+regData <- st_read(here("data", "RegressionData.shp"))
+
+```
+
+
+```{r}
+# check for queen neighbors
+queen<-poly2nb(regData, row.names=regData$POLY_ID)
+summary(queen)
+```
+
+```{r}
+
+# global moran I
+
+queenlist<-nb2listw(queen, style = 'W')
+observed_moran <- moran(regData$LNMEDHVAL, queenlist, n=length(queenlist$neighbours), S0=Szero(queenlist))$`I` 
+observed_moran
+```
+
+
+```{r}
+
+moranMC<-moran.mc(regData$LNMEDHVAL, queenlist, nsim=999, alternative="two.sided") 
+moranMC
+
+```
+
+```{r}
+
+
+moranMC_df <- data.frame(moranMCres = moranMC$res)
+
+ggplot(moranMC_df, aes(x = moranMC$res)) +
+  geom_histogram(bins = 100, fill = 'blue', color = 'black', alpha = 0.7) +
+  geom_vline(xintercept = observed_moran, color = 'red', linetype = 'dashed', size = 1.2) +
+  labs(title = "Distribution of Moran's I from Random Permutations",
+       x = "Moran's I",
+       y = "Frequency") +
+  theme_minimal()
+
+```
+
+
+```{r}
+
+# local moran's I
+
+LISA<-localmoran(regData$LNMEDHVAL , queenlist)
+head(LISA)
+
+```
+
+```{r}
+
+# OLS regression
+
+OLS <- lm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=regData)
+summary(OLS)
+```
+
+```{r}
+
+fitted_values <- fitted(OLS)
+residuals_values <- residuals(OLS)
+standardized_residuals <- rstandard(OLS)
+resnb<-sapply(queen, function(x) mean(standardized_residuals[x]))
+regData <- regData %>%
+  mutate(
+    Fitted = fitted_values,
+    Residuals = residuals_values,
+    Standardized_Residuals = standardized_residuals,
+    Residuals_NB = resnb)
+
+```
+
+
+```{r}
+
+#Regressing residuals on their nearest neighbors.
+res.lm <- lm(Standardized_Residuals ~ Residuals_NB, data=regData)
+summary(res.lm)
+
+```
+
+```{r}
+ggplot(regData, aes(x = Residuals_NB, y = Standardized_Residuals)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Residuals vs. Nearest Neighbor Residuals",
+       x = "Nearest Neighbor Residuals",
+       y = "Standardized Residuals") +
+  theme_minimal()
+```
+
+
