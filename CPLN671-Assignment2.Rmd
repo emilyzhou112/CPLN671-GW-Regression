@@ -17,41 +17,119 @@ editor_options:
     wrap: sentence
 ---
 
+Version 1.0 | First Created Oct 22, 2024 | Updated 
+
+Keywords: Spatial Error, Spatial Lag, Geographically Weighted Regression, Global & Local Moran's I
+
+GitHub Repository: [CPLN671-GW-Regression](https://github.com/emilyzhou112/CPLN671-GW-Regression)
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r}
+```{r load packages, message=FALSE, warning=FALSE, include=FALSE}
 
-options(scipen = 999)
+options(scipen=999)
+options(digits = 3)
 
-library(tidyverse)
-library(sf)
-library(here)
-library(spdep)
-library(spgwr)
-library(spatialreg)
-library(whitestrap)
-library(lmtest)
-library(tseries)
-library(ggplot2)
+# List of required packages
+packages <- c("tidyverse", "sf", "here", "spdep", "spgwr", "spatialreg", 
+              "whitestrap", "lmtest", "tseries", "ggplot2")
+
+# Install and load required packages
+package.check <- lapply(
+  packages,
+  FUN = function(x) {
+    if (!require(x, character.only = TRUE)) {
+      install.packages(x, dependencies = TRUE, quietly=TRUE)
+      library(x, character.only = TRUE)
+    }
+  }
+)
 
 ```
 
 
-```{r}
+```{r load data, message=FALSE, warning=FALSE, include=FALSE}
 
 regData <- st_read(here("data", "RegressionData.shp"))
 
 ```
 
+# Introduction
 
-```{r}
-# check for queen neighbors
+a)	State the problem and the setting of the analysis (Philadelphia).
+b)	Indicate that in the previous report, you carried out OLS regression to examine the relationship between your dependent variable and predictors (state what the dependent variables and predictors are).
+c)	State that OLS analysis is often inappropriate when dealing with datasets that have a spatial component
+d)	Mention that the purpose of this report is to use spatial lag, spatial error and geographically weighted regression to see whether these methods perform better than OLS.
+
+# Methods 
+
+## Spatial Autocorrelation
+
+Mention the 1st Law of Geography
+
+Talk about Moran’s I and present and explain formula for Moran’s I. Be sure to explain what each term is.
+
+Mention and explain the weight matrix that you’re using. Indicate that throughout this report, you will be using this weight matrix.Specify why statisticians sometimes like to use more than one spatial weight matrix in their analyses. 
+
+Talk about how you test whether the spatial autocorrelation (Moran’s I) is significant. State what hypotheses you’re testing (present the null and alternative hypotheses) and describe the random permutation process.
+
+Describe the concept of local spatial autocorrelation (no need for formulas here), and how the significance tests are carried out. 
+
+## Ordinary Least Squares (OLS) Regression
+
+Begin by giving a brief (3-5 sentence) overview of OLS regression. Specifically, list the assumptions of OLS. Refer the reader to your HW 1 for more information on OLS.
+
+State that when the data has a spatial component, the assumption that your errors are random/independent often doesn’t hold. Indicate that you can test the assumption by examining the spatial autocorrelation of the residuals using Moran’s I. Indicate that another way to test OLS residuals for spatial autocorrelation is to regress them on nearby residuals (here, these nearby residuals are residuals at neighboring block groups, as defined by the Queen matrix). 
+
+State that R also has a way of testing other regression assumptions. The first is the assumption of homoscedasticity, which is tied to the assumption of independence of errors.State which test(s) is/are used to examine data for heteroscedasticity in R, and state the null and alternative hypotheses. Another assumption is that of normality of errors. State which test is used to test for normality of errors in R, and state the null and alternative hypotheses.
+
+
+## Spatial Lag and Spatial Error Regression
+
+State that we will be using R for running spatial lag and spatial error regressions. 
+
+Describe the method of spatial lag regression in several sentences. Present the model equation for the spatial lag model. Instead of writing X1…X4, write the names of the actual predictors that you’re using in this assignment (e.g., PCTVACANT). Explain what each term is (the β coefficients, ρ, ε, etc)
+
+Describe the method of spatial error regression in several sentences. Present the model equation for the spatial error model. Instead of writing X1…X4, write the names of the actual predictors that you’re using in this assignment (e.g., PCTVACANT). Explain what each term is (the β coefficients, λ, ε, u, etc). Indicate that the assumptions that are needed for OLS are still needed for both spatial lag and spatial error regression models (except that of spatial independence of observations).
+
+State the goal of spatial lag and spatial error regression (i.e., what you hope will happen with regression residuals as a result of using these methods. 
+
+Mention that you will compare the results of spatial lag regression with OLS and the results of spatial error regression with OLS, and will decide whether the spatial models perform better than OLS based a number of criteria. 
+These criteria include: Akaike Information Criterion/Schwarz Criterion, Log Likelihood; Likelihood Ratio Test
+
+Be sure to describe what each of the above criteria is, and how you decide which model is better based on this criterion (state any null/alternative hypotheses, if applicable).
+
+State that another way of comparing OLS results with spatial lag and spatial error results is by looking at the Moran’s I of regression residuals. Indicate how you would decide which model is better based on this criterion.
+
+## Geographically Weighted Regression (GWR)
+
+State that you will do your GWR analyses in R.
+Introduce GWR by talking about the concepts of Simpson’s paradox and local regression.
+Present the GWR equations and explain them in your own words
+Talk about how local regression is run
+Discuss the concept of bandwidth, and talk about adaptive vs. fixed bandwidth.
+State that here, you will be using adaptive bandwidth
+Explain why adaptive bandwidth is more appropriate in this problem than the fixed bandwidth
+Mention that the OLS assumptions still hold in GWR.
+When mentioning multicollinearity, talk about the Condition Number, and the issues of multicollinearity/clustering in GWR.
+Indicate why p-values are not part of the GWR output.
+
+# Results
+
+## Global and Local Moran's I
+
+```{r construc queen neighbors, message=FALSE, warning=FALSE}
+
 queen<-poly2nb(regData, row.names=regData$POLY_ID)
 summary(queen)
+
 ```
+
+Present and describe the global Moran’s I value of the dependent variable and the random permutations test results.
+Is LNMEDHVAL significantly spatially autocorrelated? 
 
 ```{r}
 
@@ -105,6 +183,8 @@ ggplot(moran_df, aes(x = LNMEDHVAL, y = spatial_lag)) +
   theme_minimal()
 ```
 
+For Local Moran’s I results, present the Significance Map and Cluster Map obtained by running the Local Morans’ I. 
+Discuss the results: what are the not significant, high-high, high-low, low-high and low-low areas on the Cluster Map? Where in the city are these areas? 
 
 
 ```{r}
@@ -116,9 +196,132 @@ head(LISA)
 
 ```
 ```{r}
-df.LISA <-cbind(shp, as.data.frame(LISA))
+
+df.LISA <-cbind(regData, as.data.frame(LISA))
 
 ```
+
+
+```{r}
+
+# Define the ggplot version of moranSig.plot
+moranSig.plot.ggplot <- function(df, listw, title) {
+  
+  # Compute local Moran's I
+  local <- localmoran(x = df$LNMEDHVAL, listw = listw, zero.policy = FALSE)
+  
+  df$Pr.z <- local[,  "Pr(z != E(Ii))"]  # Adjust this column name based on your output
+  
+  # Categorize p-values into significance bins
+  df$pval_category <- cut(df$Pr.z, 
+                          breaks = c(0, 0.001, 0.01, 0.05, 1), 
+                          labels = c("< 0.001", "0.001 - 0.01", "0.01 - 0.05", "> 0.05"), 
+                          include.lowest = TRUE)
+  
+  # Ensure df is an sf object (spatial data frame)
+  if (!inherits(df, "sf")) {
+    df <- st_as_sf(df)
+  }
+  
+  # Plot with ggplot
+  ggplot(data = df) +
+    geom_sf(aes(fill = pval_category), color = "white") +
+    scale_fill_manual(
+      values = c("< 0.001" = "#8c510a", "0.001 - 0.01" = "#d8b365", 
+                 "0.01 - 0.05" = "#f6e8c3", "> 0.05" = "#c7eae5"), 
+      name = "p-value"
+    ) +
+    labs(title = title) +
+    theme_minimal() +
+    theme(legend.position = "right", 
+          plot.title = element_text(hjust = 0.5, size = 16),
+          panel.grid = element_blank())
+}
+
+# Example usage of the function
+moranSig.plot.ggplot(df.LISA, queenlist, 'p-value')
+
+```
+
+
+```{r}
+
+hl.plot<-function(df, listw){
+  local<-localmoran(x=df$LNMEDHVAL, listw=listw, zero.policy = FALSE)
+  quadrant<-vector(mode='numeric', length=323)
+  m.prop<-df$LNMEDHVAL - mean(df$LNMEDHVAL)
+  m.local<-local[,1]-mean(local[,1])
+  signif<-0.05
+  quadrant[m.prop >0 & m.local>0]<-4 #high MEDHHINC, high clustering
+  quadrant[m.prop <0 & m.local<0]<-1 #low MEDHHINC, low clustering
+  quadrant[m.prop <0 & m.local>0]<-2 #low MEDHINC, high clustering
+  quadrant[m.prop >0 & m.local<0]<-3 #high MEDHHINC, low clustering
+  quadrant[local[,5]>signif]<-0
+  
+  brks <- c(0,1,2,3,4)
+  colors <- c("grey","lightblue",'blue','pink',"red")
+  plot<-plot(regData$geometry,border="gray90",lwd=1.0,col=colors[findInterval(quadrant,brks,all.inside=FALSE)])
+}
+
+hl.plot(regData, queenlist)
+legend("bottomright",legend=c("insignificant","low-high","low-low","high-low","high-high"),
+       fill=c("grey", "lightblue", "blue", "pink", "red"),bty="n", cex = 0.5)
+```
+
+```{r}
+hl.plot.ggplot <- function(df, listw) {
+  # Compute local Moran's I
+  local <- localmoran(x = df$LNMEDHVAL, listw = listw, zero.policy = FALSE)
+  
+  # Initialize quadrant vector
+  quadrant <- vector(mode = 'numeric', length = nrow(df))  # Use nrow(df) for the length of the vector
+  
+  # Calculate deviations from the mean for the variable and local Moran's I
+  m.prop <- df$LNMEDHVAL - mean(df$LNMEDHVAL)
+  m.local <- local[, 1] - mean(local[, 1])
+  
+  # Set significance level
+  signif <- 0.05
+  
+  # Assign quadrants
+  quadrant[m.prop > 0 & m.local > 0] <- 4  # high-high
+  quadrant[m.prop < 0 & m.local < 0] <- 1  # low-low
+  quadrant[m.prop < 0 & m.local > 0] <- 2  # low-high
+  quadrant[m.prop > 0 & m.local < 0] <- 3  # high-low
+  quadrant[local[, 5] > signif] <- 0  # insignificant
+  
+  # Add quadrant column to the dataframe
+  df$quadrant <- factor(quadrant, levels = c(0, 1, 2, 3, 4), 
+                        labels = c("Insignificant", "Low-High", "Low-Low", "High-Low", "High-High"))
+  
+  # Ensure df is an sf object
+  if (!inherits(df, "sf")) {
+    df <- st_as_sf(df)
+  }
+  
+  # Create the plot using ggplot2
+  ggplot(data = df) +
+    geom_sf(aes(fill = quadrant), color = "gray90", lwd = 0.2) +
+    scale_fill_manual(
+      values = c("Insignificant" = "grey", "Low-High" = "lightblue", "Low-Low" = "blue", 
+                 "High-Low" = "pink", "High-High" = "red"),
+      name = "Cluster Type"
+    ) +
+    labs(title = "Local Moran's I Cluster Map") +
+    theme_minimal() +
+    theme(legend.position = "bottom",
+          plot.title = element_text(hjust = 0.5, size = 16))
+}
+
+# Example usage:
+hl.plot.ggplot(regData, queenlist)
+
+```
+
+
+## OLS Regression Results
+
+Give a brief 2 sentence overview of the OLS results (feel free to paste this from your description in HW 1). That is, simply indicate which predictors are significant and what % of variance in LNMEDHVAL has been explained by the model. 
 
 ```{r}
 
@@ -127,6 +330,45 @@ df.LISA <-cbind(shp, as.data.frame(LISA))
 OLS <- lm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=regData)
 summary(OLS)
 ```
+
+Comment on the results of the tests on heteroscedasticity
+Are the results from the different tests consistent with each other? 
+Do they indicate a problem with heteroscedasticity?
+Is this conclusion consistent with the conclusion from the residual by predicted plot you presented in HW 1?
+Include that plot in the current report as well.
+
+
+```{r}
+
+#Prints the results of the Breusch-Pagan Test to assess whether heteroscedasticity is present 
+bptest(OLS, studentize=FALSE)
+
+```
+```{r}
+#Prints the results of the Koenker-Bassett Test (also known as the Studentized Breusch-Pagan Test) to assess whether heteroscedasticity is present (package: lmtest)
+bptest(OLS) 
+```
+
+```{r}
+#Prints the results of the White Test to assess whether heteroscedasticity is present (package: whitestrap)
+white_test(OLS)
+```
+Comment on the results of the test on normality of errors (Jarque-Bera test)
+Do test results indicate a problem with normality?
+Is this conclusion consistent with the histogram of residuals (errors) you presented in HW 1? If not, comment why not.
+Include the histogram in the current report as well. 
+
+
+```{r}
+
+#Prints the results of the Jarque-Bera Test to assess whether residuals are normal (package: tseries)
+jarque.bera.test(OLS$residuals)
+
+
+```
+Present the scatterplot of OLS_RESIDU by WT_RESIDU and describe the results.
+Is Slope b at the bottom of the scatterplot significant, meaning that there’s significant spatial autocorrelation?
+
 
 ```{r}
 
@@ -142,6 +384,7 @@ regData <- regData %>%
     Residuals_NB = resnb)
 
 ```
+
 
 
 ```{r}
@@ -161,6 +404,10 @@ ggplot(regData, aes(x = Residuals_NB, y = Standardized_Residuals)) +
        y = "Standardized Residuals") +
   theme_minimal()
 ```
+
+Present the Moran’s I scatterplot and results from the 999 permutations for OLS regression residuals.
+Are you seeing significant spatial autocorrelation in your OLS residuals, and is this problematic?
+Do Moran’s I and the Beta coefficient of weighted (spatially lagged) residuals tell a similar story?
 
 ```{r}
 
@@ -208,6 +455,14 @@ ggplot(res_moran_df, aes(x = residuals, y = spatial_lag)) +
 
 
 ```
+## Spatial Lag and Spatial Error Regression Results
+
+### Spatial Lag Regression
+
+Present results of Spatial Lag regression
+Talk about the W_LNMEDHVAL term in the spatial lag regression output. State whether it is significant, and how the results can be interpreted.
+Are the remaining terms (i.e., the predictors LNNBELPOV, PCTBACHMOR, PCTSINGLES, and PCTVACANT) in the model significant? 
+Compare these results to OLS results.
 
 ```{r}
 
@@ -217,6 +472,30 @@ SL <- lagsarlm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data
 summary(SL)
 
 ```
+
+State whether, based on the Breusch-Pagan test, the spatial lag regression residuals are still heteroscedastic.
+
+```{r}
+
+#Prints the results of the Breusch-Pagan Test to assess whether heteroscedasticity is present (package: lmtest)
+bptest.Sarlm(SL, studentize=FALSE)
+
+```
+Compare the Spatial Lag regression and OLS regression models based on the Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and the Likelihood Ratio Test. 
+
+```{r}
+
+BIC(OLS)
+BIC(SL)
+
+```
+
+
+```{r}
+LR.Sarlm(SL, OLS)
+```
+Present the Moran’s I scatterplot of spatial lag regression residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals?
+Overall, which model is doing better based on all of these criteria?
 
 
 ```{r}
@@ -250,6 +529,14 @@ ggplot(SL_moran_df, aes(x = residuals, y = spatial_lag)) +
   theme_minimal()
 
 ```
+
+### Spatial Error Regression
+
+Present results of Spatial Error regression (call this Table 3)
+Talk about the LAMBDA term in the spatial error regression output. State whether it is significant, and how the results can be interpreted.
+Are the remaining terms (i.e., the predictors LNNBELPOV, PCTBACHMOR, PCTSINGLES, and PCTVACANT) in the model significant? 
+Compare these results to OLS results.
+
 ```{r}
 
 # running spatial error regression
@@ -257,6 +544,32 @@ ggplot(SL_moran_df, aes(x = residuals, y = spatial_lag)) +
 SE <- errorsarlm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=regData, queenlist)
 summary(SE)
 ```
+
+State whether, based on the Breusch-Pagan test, the spatial lag regression residuals are still heteroscedastic? 
+
+```{r}
+
+#Prints the results of the Breusch-Pagan Test to assess whether heteroscedasticity is present (package: lmtest)
+bptest.Sarlm(SE, studentize=FALSE)
+
+```
+Compare the Spatial Error regression and OLS regression based on the Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and the Likelihood Ratio Test. 
+
+```{r}
+
+BIC(OLS)
+BIC(SE)
+
+```
+
+```{r}
+
+LR.Sarlm(SE, OLS)
+
+```
+
+Present the Moran’s I scatterplot of spatial error regression residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals?
+Overall, which model is doing better based on all of these criteria?
 
 
 ```{r}
@@ -287,6 +600,12 @@ ggplot(SE_moran_df, aes(x = residuals, y = spatial_lag)) +
 
 ```
 
+
+Compare the Spatial Lag and Spatial Error results with each other
+Which model has better (lower) Akaike Information Criterion and Schwarz Information Criterion values?
+
+## Geographically Weighted Regression (GWR) Results
+
 ```{r}
 
 # running GWR
@@ -307,15 +626,8 @@ bw<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
 bw
 ```
 
-```{r}
-
-bw_fixed<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
-            data=shps,
-            method = "aic",
-            adapt = FALSE)
-bw_fixed
-```
-
+Compare the (overall) R-squared of the GWR regression with the R-squared of the OLS regression. State which regression method seems to be doing a better job of explaining the variance in the dependent variable.
+Compare the Akaike Information Criteria (AIC and not AICc) of GWR with those of OLS, Spatial Lag and Spatial Error models. Which model seems to be doing a better job based on that (remember, the lower the Akaike Information Criterion, the better the fit).
 
 ```{r}
 gwrmodel<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
@@ -327,24 +639,7 @@ gwrmodel<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPO
 gwrmodel
 ```
 
-
-```{r}
-
-gwrmodel_fixed<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
-              data=shps,
-              bandwidth = bw_fixed, #fixed bandwidth
-              gweight=gwr.Gauss,
-              se.fit=TRUE, #to return local standard errors
-              hatmatrix = TRUE)
-gwrmodel_fixed
-
-```
-
-```{r}
-
-summary(gwrmodel$SDF)
-
-```
+Present and discuss the choropleth map of local R-squares. 
 
 ```{r}
 
@@ -374,6 +669,7 @@ ggplot(data = shps_sf) +
 
 ```
 
+Present the Moran’s I scatterplot of GWR residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals? What about the Spatial Lag and Spatial Error Residuals.
 
 ```{r}
 
@@ -419,6 +715,8 @@ ggplot(gwr_moranMC_df, aes(x = gwr_resMoranMc)) +
   theme_minimal()
 
 ```
+
+Present the maps of coefficients divided by the standard error that you created earlier. Are there locations in the city where the relationships between each of the predictors and the dependent variable possibly significant?
 
 ```{r}
 # present maps of the ratio of the beta coefficients and the standard error estimates. 
@@ -503,4 +801,15 @@ ggplot(shps_sf) +
     theme(legend.position = "right")
 ```
 
+# Discussion 
 
+a)	In a couple sentences, recap what you did in the paper and your findings. Discuss what conclusions you can draw, and which of the four regression methods (OLS, Spatial Lag, Spatial Error, GWR) was the best, based on the results. 
+
+b)	Give a brief description of the limitations (i.e., which assumptions were not met).
+
+c)	Discuss what is meant by weighted (i.e., spatially lagged) residuals, as opposed to spatial lag [model] residuals. This is a common source of confusion, and being able to explain this in your own words is important.
+Make sure that you are using the correct terminology throughout the report. 
+
+d)	Mention why ArcGIS is problematic for GWR.
+
+# Reference
