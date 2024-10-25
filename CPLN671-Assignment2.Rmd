@@ -35,7 +35,7 @@ options(digits = 3)
 
 # List of required packages
 packages <- c("tidyverse", "sf", "here", "spdep", "spgwr", "spatialreg", 
-              "whitestrap", "lmtest", "tseries", "ggplot2")
+              "whitestrap", "lmtest", "tseries", "ggplot2", "kableExtra", "patchwork")
 
 # Install and load required packages
 package.check <- lapply(
@@ -121,257 +121,164 @@ Indicate why p-values are not part of the GWR output.
 
 ## Global and Local Moran's I
 
-```{r construc queen neighbors, message=FALSE, warning=FALSE}
-
-queen<-poly2nb(regData, row.names=regData$POLY_ID)
-summary(queen)
-
-```
-
 Present and describe the global Moran’s I value of the dependent variable and the random permutations test results.
 Is LNMEDHVAL significantly spatially autocorrelated? 
 
-```{r}
+```{r construct queen neighbors, message=FALSE, warning=FALSE, include=FALSE}
 
-# global moran I
-
+queen<-poly2nb(regData, row.names=regData$POLY_ID)
 queenlist<-nb2listw(queen, style = 'W')
-observed_moran <- moran(regData$LNMEDHVAL, queenlist, n=length(queenlist$neighbours), S0=Szero(queenlist))$`I` 
-observed_moran
-```
-
-
-```{r}
-
-moranMC<-moran.mc(regData$LNMEDHVAL, queenlist, nsim=999, alternative="two.sided") 
-moranMC
 
 ```
 
-```{r}
 
+```{r global moran's I, message=FALSE, warning=FALSE}
 
-moranMC_df <- data.frame(moranMCres = moranMC$res)
+globalmoranMC<-moran.mc(regData$LNMEDHVAL, queenlist, nsim=999, alternative="two.sided") 
+globalmoranMC
 
-ggplot(moranMC_df, aes(x = moranMC$res)) +
-  geom_histogram(bins = 100, fill = 'blue', color = 'black', alpha = 0.7) +
-  geom_vline(xintercept = observed_moran, color = 'red', linetype = 'dashed', size = 1.2) +
-  labs(title = "Distribution of Moran's I from Random Permutations",
+```
+
+```{r global moran histogram plot, message=FALSE, warning=FALSE}}
+
+ggplot(data.frame(res = globalmoranMC$res), aes(x = res)) +
+  geom_histogram(bins = 100, fill = "#283d3b") +
+  geom_vline(xintercept = globalmoranMC$statistic, color = "#c44536", linetype = 'dashed', size = 1) +
+  labs(title = "Observed and Permuted Global Moran's I",
+       subtitle = "Observed Moran's I in Red",
        x = "Moran's I",
-       y = "Frequency") +
-  theme_minimal()
+       y = "Count") +
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
 
 ```
 
-```{r}
+```{r global moran scatter plot, message=FALSE, warning=FALSE}}
 
-spatial_lag <- lag.listw(queenlist, regData$LNMEDHVAL)
-
-# Create a data frame with the variable and its spatial lag
-moran_df <- data.frame(
+ggplot(data = data.frame(
   LNMEDHVAL = regData$LNMEDHVAL,
-  spatial_lag = spatial_lag
-)
-
-# Plot using ggplot
-ggplot(moran_df, aes(x = LNMEDHVAL, y = spatial_lag)) +
-  geom_point(color = "blue", alpha = 0.7) +  # Scatter plot points
-  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Linear regression line
-  labs(title = "Moran Scatter Plot",
-       x = "LNMEDHVAL",
+  spatial_lag = lag.listw(queenlist, regData$LNMEDHVAL)
+), aes(x = LNMEDHVAL, y = spatial_lag)) +
+  geom_point(color = "#283d3b", alpha = 0.7, size = 0.6) +  
+  geom_smooth(method = "lm", color = "#c44536", se = FALSE) + 
+  labs(title = "Global Moran's I Scatter Plot",
+       x = "Logged Median House Value",
        y = "Spatial Lag of LNMEDHVAL") +
-  theme_minimal()
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
+
 ```
 
 For Local Moran’s I results, present the Significance Map and Cluster Map obtained by running the Local Morans’ I. 
 Discuss the results: what are the not significant, high-high, high-low, low-high and low-low areas on the Cluster Map? Where in the city are these areas? 
 
 
-```{r}
+```{r compute local moran I, message=FALSE, warning=FALSE}
 
-# local moran's I
-
-LISA<-localmoran(regData$LNMEDHVAL , queenlist)
-head(LISA)
-
-```
-```{r}
-
-df.LISA <-cbind(regData, as.data.frame(LISA))
+localmoran <-localmoran(regData$LNMEDHVAL , queenlist)
+localmoran <-cbind(regData, as.data.frame(localmoran))
 
 ```
 
 
-```{r}
+```{r local moran significance map, message=FALSE, warning=FALSE}
 
-# Define the ggplot version of moranSig.plot
-moranSig.plot.ggplot <- function(df, listw, title) {
+moranSig.plot <- function(df, listw, title) {
   
-  # Compute local Moran's I
   local <- localmoran(x = df$LNMEDHVAL, listw = listw, zero.policy = FALSE)
   
-  df$Pr.z <- local[,  "Pr(z != E(Ii))"]  # Adjust this column name based on your output
+  df$Pr.z <- local[,  "Pr(z != E(Ii))"]  
   
-  # Categorize p-values into significance bins
   df$pval_category <- cut(df$Pr.z, 
                           breaks = c(0, 0.001, 0.01, 0.05, 1), 
-                          labels = c("< 0.001", "0.001 - 0.01", "0.01 - 0.05", "> 0.05"), 
+                          labels = c("0.000 - 0.001", "0.001 - 0.010", "0.010 - 0.050", "0.050 - 1.000"), 
                           include.lowest = TRUE)
   
-  # Ensure df is an sf object (spatial data frame)
   if (!inherits(df, "sf")) {
     df <- st_as_sf(df)
   }
   
-  # Plot with ggplot
   ggplot(data = df) +
-    geom_sf(aes(fill = pval_category), color = "white") +
-    scale_fill_manual(
-      values = c("< 0.001" = "#8c510a", "0.001 - 0.01" = "#d8b365", 
-                 "0.01 - 0.05" = "#f6e8c3", "> 0.05" = "#c7eae5"), 
-      name = "p-value"
-    ) +
+    geom_sf(aes(fill = pval_category), color = NA, alpha = 0.9) +
+    scale_fill_brewer(type = "div", palette = 6, name = "P-Value") +
     labs(title = title) +
-    theme_minimal() +
-    theme(legend.position = "right", 
-          plot.title = element_text(hjust = 0.5, size = 16),
-          panel.grid = element_blank())
+    theme(legend.text = element_text(size = 9),
+        legend.title = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.subtitle = element_text(size = 9, face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill = NA, size = 0.8))
 }
 
-# Example usage of the function
-moranSig.plot.ggplot(df.LISA, queenlist, 'p-value')
+moranSig.plot(localmoran, queenlist, 'Significance Map of Local Moran I')
 
 ```
 
 
-```{r}
+```{r local moran cluster map,message=FALSE, warning=FALSE}
+hl.plot <- function(df, listw) {
 
-hl.plot<-function(df, listw){
-  local<-localmoran(x=df$LNMEDHVAL, listw=listw, zero.policy = FALSE)
-  quadrant<-vector(mode='numeric', length=323)
-  m.prop<-df$LNMEDHVAL - mean(df$LNMEDHVAL)
-  m.local<-local[,1]-mean(local[,1])
-  signif<-0.05
-  quadrant[m.prop >0 & m.local>0]<-4 #high MEDHHINC, high clustering
-  quadrant[m.prop <0 & m.local<0]<-1 #low MEDHHINC, low clustering
-  quadrant[m.prop <0 & m.local>0]<-2 #low MEDHINC, high clustering
-  quadrant[m.prop >0 & m.local<0]<-3 #high MEDHHINC, low clustering
-  quadrant[local[,5]>signif]<-0
-  
-  brks <- c(0,1,2,3,4)
-  colors <- c("grey","lightblue",'blue','pink',"red")
-  plot<-plot(regData$geometry,border="gray90",lwd=1.0,col=colors[findInterval(quadrant,brks,all.inside=FALSE)])
-}
-
-hl.plot(regData, queenlist)
-legend("bottomright",legend=c("insignificant","low-high","low-low","high-low","high-high"),
-       fill=c("grey", "lightblue", "blue", "pink", "red"),bty="n", cex = 0.5)
-```
-
-```{r}
-hl.plot.ggplot <- function(df, listw) {
-  # Compute local Moran's I
   local <- localmoran(x = df$LNMEDHVAL, listw = listw, zero.policy = FALSE)
+  quadrant <- vector(mode = 'numeric', length = nrow(df))  
   
-  # Initialize quadrant vector
-  quadrant <- vector(mode = 'numeric', length = nrow(df))  # Use nrow(df) for the length of the vector
-  
-  # Calculate deviations from the mean for the variable and local Moran's I
   m.prop <- df$LNMEDHVAL - mean(df$LNMEDHVAL)
   m.local <- local[, 1] - mean(local[, 1])
-  
-  # Set significance level
   signif <- 0.05
   
-  # Assign quadrants
   quadrant[m.prop > 0 & m.local > 0] <- 4  # high-high
   quadrant[m.prop < 0 & m.local < 0] <- 1  # low-low
   quadrant[m.prop < 0 & m.local > 0] <- 2  # low-high
   quadrant[m.prop > 0 & m.local < 0] <- 3  # high-low
   quadrant[local[, 5] > signif] <- 0  # insignificant
   
-  # Add quadrant column to the dataframe
-  df$quadrant <- factor(quadrant, levels = c(0, 1, 2, 3, 4), 
-                        labels = c("Insignificant", "Low-High", "Low-Low", "High-Low", "High-High"))
-  
+  df$quadrant <- factor(quadrant, levels = c(4, 3, 0, 2, 1), 
+                        labels = c("High-High", "High-Low", "Insignificant", "Low-High", "Low-Low"))
+                          
   # Ensure df is an sf object
   if (!inherits(df, "sf")) {
     df <- st_as_sf(df)
   }
   
-  # Create the plot using ggplot2
   ggplot(data = df) +
-    geom_sf(aes(fill = quadrant), color = "gray90", lwd = 0.2) +
-    scale_fill_manual(
-      values = c("Insignificant" = "grey", "Low-High" = "lightblue", "Low-Low" = "blue", 
-                 "High-Low" = "pink", "High-High" = "red"),
-      name = "Cluster Type"
-    ) +
+    geom_sf(aes(fill = quadrant), color = "#848884", lwd = 0.07) +
+    scale_fill_brewer(type = "div", palette = 6, name = "Cluster Type") +  # Divergent palette
     labs(title = "Local Moran's I Cluster Map") +
-    theme_minimal() +
-    theme(legend.position = "bottom",
-          plot.title = element_text(hjust = 0.5, size = 16))
+    theme(legend.position="right",
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks =element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
+        )
 }
 
-# Example usage:
-hl.plot.ggplot(regData, queenlist)
+hl.plot(regData, queenlist)
 
 ```
-
 
 ## OLS Regression Results
 
 Give a brief 2 sentence overview of the OLS results (feel free to paste this from your description in HW 1). That is, simply indicate which predictors are significant and what % of variance in LNMEDHVAL has been explained by the model. 
 
-```{r}
-
-# OLS regression
+```{r ols regression, message=FALSE, warning=FALSE}
 
 OLS <- lm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=regData)
-summary(OLS)
-```
-
-Comment on the results of the tests on heteroscedasticity
-Are the results from the different tests consistent with each other? 
-Do they indicate a problem with heteroscedasticity?
-Is this conclusion consistent with the conclusion from the residual by predicted plot you presented in HW 1?
-Include that plot in the current report as well.
-
-
-```{r}
-
-#Prints the results of the Breusch-Pagan Test to assess whether heteroscedasticity is present 
-bptest(OLS, studentize=FALSE)
-
-```
-```{r}
-#Prints the results of the Koenker-Bassett Test (also known as the Studentized Breusch-Pagan Test) to assess whether heteroscedasticity is present (package: lmtest)
-bptest(OLS) 
-```
-
-```{r}
-#Prints the results of the White Test to assess whether heteroscedasticity is present (package: whitestrap)
-white_test(OLS)
-```
-Comment on the results of the test on normality of errors (Jarque-Bera test)
-Do test results indicate a problem with normality?
-Is this conclusion consistent with the histogram of residuals (errors) you presented in HW 1? If not, comment why not.
-Include the histogram in the current report as well. 
-
-
-```{r}
-
-#Prints the results of the Jarque-Bera Test to assess whether residuals are normal (package: tseries)
-jarque.bera.test(OLS$residuals)
-
-
-```
-Present the scatterplot of OLS_RESIDU by WT_RESIDU and describe the results.
-Is Slope b at the bottom of the scatterplot significant, meaning that there’s significant spatial autocorrelation?
-
-
-```{r}
-
 fitted_values <- fitted(OLS)
 residuals_values <- residuals(OLS)
 standardized_residuals <- rstandard(OLS)
@@ -383,78 +290,156 @@ regData <- regData %>%
     Standardized_Residuals = standardized_residuals,
     Residuals_NB = resnb)
 
+summary(OLS)
+
 ```
 
 
+Comment on the results of the tests on heteroscedasticity
+Are the results from the different tests consistent with each other? 
+Do they indicate a problem with heteroscedasticity?
+Is this conclusion consistent with the conclusion from the residual by predicted plot you presented in HW 1?
+Include that plot in the current report as well.
 
-```{r}
 
-#Regressing residuals on their nearest neighbors.
+```{r heteroscedasticity tests, message=FALSE, warning=FALSE}
+
+# Breusch-Pagan Test
+bptest(OLS, studentize=FALSE)
+
+# Koenker-Bassett Test
+bptest(OLS) 
+
+# White Test
+white_test(OLS)
+
+
+```
+
+```{r heteroscedasticity plot, message=FALSE, warning=FALSE}
+
+ggplot(regData, aes(x = Fitted, y = Standardized_Residuals)) +
+  geom_point(color = "#283d3b", alpha = 0.9, size = 0.6) +    
+  geom_hline(yintercept = 0, linetype = "dashed", color = "#c44536", size = 1) +   #
+  labs(
+    title = "Scatter Plot of Standardized Residuals vs Fitted Values",
+    x = "Fitted Values",
+    y = "Standardized Residuals"
+  ) +
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
+```
+
+
+Comment on the results of the test on normality of errors (Jarque-Bera test)
+Do test results indicate a problem with normality?
+Is this conclusion consistent with the histogram of residuals (errors) you presented in HW 1? If not, comment why not.
+Include the histogram in the current report as well. 
+
+
+```{r normality of errors, message=FALSE, warning=FALSE}
+
+# Jarque-Bera Test 
+jarque.bera.test(OLS$residuals)
+
+
+```
+```{r histogram of residuals, message=FALSE, warning=FALSE}
+
+ggplot(regData, aes(x = Standardized_Residuals)) +
+  geom_histogram(bins = 30, fill = "#283d3b", alpha = 0.9) +
+  labs(title = "Histogram of Standardized Residuals", 
+       x = "Standardized Residuals", 
+       y = "Frequency") +
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
+```
+
+
+Present the scatterplot of OLS_RESIDU by WT_RESIDU and describe the results.
+Is Slope b at the bottom of the scatterplot significant, meaning that there’s significant spatial autocorrelation?
+
+```{r ols residuals vs nearest neighbor residuals, message=FALSE, warning=FALSE}
+
 res.lm <- lm(Standardized_Residuals ~ Residuals_NB, data=regData)
 summary(res.lm)
 
 ```
 
-```{r}
+```{r ols residuals vs nearest neighbor residuals plot, message=FALSE, warning=FALSE}
 ggplot(regData, aes(x = Residuals_NB, y = Standardized_Residuals)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  geom_point(color = "#283d3b", alpha = 0.9, size = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, color = "#c44536", size = 1) +
   labs(title = "Residuals vs. Nearest Neighbor Residuals",
        x = "Nearest Neighbor Residuals",
        y = "Standardized Residuals") +
-  theme_minimal()
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
 ```
 
 Present the Moran’s I scatterplot and results from the 999 permutations for OLS regression residuals.
 Are you seeing significant spatial autocorrelation in your OLS residuals, and is this problematic?
 Do Moran’s I and the Beta coefficient of weighted (spatially lagged) residuals tell a similar story?
 
-```{r}
 
-# Moran’s I of the OLS regression residuals
-residuals_moran <- moran(standardized_residuals, queenlist, n=length(queenlist$neighbours), S0=Szero(queenlist))$`I`
-residuals_moran
+```{r moran's I of OLS residuals, message=FALSE, warning=FALSE}
 
-res_moranMC<-moran.mc(standardized_residuals, queenlist, nsim=999, alternative="two.sided") 
-res_moranMC
+OLS_moranMC<-moran.mc(standardized_residuals, queenlist, nsim=999, alternative="two.sided") 
+OLS_moranMC
+
 ```
 
 
-```{r}
+```{r moran's I of OLS residuals histogram, message=FALSE, warning=FALSE}
 
-res_moranMC_df <- data.frame(res_moranMCres = res_moranMC$res)
-
-ggplot(res_moranMC_df, aes(x = res_moranMC$res)) +
-  geom_histogram(bins = 100, fill = 'blue', color = 'black', alpha = 0.7) +
-  geom_vline(xintercept = residuals_moran, color = 'red', linetype = 'dashed', size = 1.2) +
-  labs(title = "Distribution of Moran's I from Random Permutations",
+ggplot(data.frame(res = OLS_moranMC$res), aes(x = res)) +
+  geom_histogram(bins = 100, fill = "#283d3b") +
+  geom_vline(xintercept =OLS_moranMC$statistic, color = "#c44536", linetype = 'dashed', size = 1) +
+  labs(title = "Observed and Permuted Moran's I of OLS Regression Residuals",
+       subtitle = "Observed Moran's I in Red",
        x = "Moran's I",
-       y = "Frequency") +
-  theme_minimal()
+       y = "Count") +
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
+
 ```
 
+```{r moran's I of OLS residuals scatter plot, message=FALSE, warning=FALSE}
 
-```{r}
-
-res_spatial_lag <- lag.listw(queenlist, standardized_residuals)
-
-# Create a data frame with the variable and its spatial lag
-res_moran_df <- data.frame(
+ggplot(data = data.frame(
   residuals =standardized_residuals,
-  spatial_lag = res_spatial_lag
-)
-
-# Plot using ggplot
-ggplot(res_moran_df, aes(x = residuals, y = spatial_lag)) +
-  geom_point(color = "blue", alpha = 0.7) +  # Scatter plot points
-  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Linear regression line
-  labs(title = "Moran Scatter Plot",
-       x = "LNMEDHVAL",
+  spatial_lag = lag.listw(queenlist, standardized_residuals)
+), aes(x = residuals, y = spatial_lag)) +
+  geom_point(color = "#283d3b", alpha = 0.9, size = 0.6) +  
+  geom_smooth(method = "lm", color = "#c44536", se = FALSE) + 
+  labs(title = "Moran's I Scatter Plot for OLS Regression Residuals",
+       x = "Logged Median House Value",
        y = "Spatial Lag of LNMEDHVAL") +
-  theme_minimal()
-
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
 
 ```
+
 ## Spatial Lag and Spatial Error Regression Results
 
 ### Spatial Lag Regression
@@ -464,9 +449,7 @@ Talk about the W_LNMEDHVAL term in the spatial lag regression output. State whet
 Are the remaining terms (i.e., the predictors LNNBELPOV, PCTBACHMOR, PCTSINGLES, and PCTVACANT) in the model significant? 
 Compare these results to OLS results.
 
-```{r}
-
-# running spatial lag regression 
+```{r spatial lag regression, message=FALSE, warning=FALSE}
 
 SL <- lagsarlm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=regData, queenlist)
 summary(SL)
@@ -475,58 +458,99 @@ summary(SL)
 
 State whether, based on the Breusch-Pagan test, the spatial lag regression residuals are still heteroscedastic.
 
-```{r}
+```{r SL heteroscedasticity tests, message=FALSE, warning=FALSE}
 
-#Prints the results of the Breusch-Pagan Test to assess whether heteroscedasticity is present (package: lmtest)
+# Breusch-Pagan Test
 bptest.Sarlm(SL, studentize=FALSE)
 
 ```
+
 Compare the Spatial Lag regression and OLS regression models based on the Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and the Likelihood Ratio Test. 
 
-```{r}
+```{r compare OLS and SL, message=FALSE, warning=FALSE}
 
-BIC(OLS)
-BIC(SL)
+# Akaike Information Criterion
+aic_ols <- AIC(OLS)
+aic_sl <- AIC(SL)
+
+# Schwarz Criterion
+bic_ols <- BIC(OLS)
+bic_sl <- BIC(SL)
+
+# The Log Likelihood
+loglik_ols <- logLik(OLS)
+loglik_sl <- logLik(SL)
+
+results <- data.frame(
+  Model = c("OLS Regression", "Spatial Lag Regression"),
+  AIC = c(aic_ols, aic_sl),
+  SchwarzCriterion = c(bic_ols, bic_sl),
+  LogLikelihood = c(loglik_ols, loglik_sl)
+)
+
+results %>%
+  kable(row.names = FALSE) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) 
+
+
+```
+
+```{r log likelihood ratio test for SL, message=FALSE, warning=FALSE}
+
+# The Likelihood Ratio Test
+lr_test <- LR.Sarlm(SL, OLS)
+lr_test
 
 ```
 
 
-```{r}
-LR.Sarlm(SL, OLS)
-```
+
 Present the Moran’s I scatterplot of spatial lag regression residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals?
 Overall, which model is doing better based on all of these criteria?
 
 
-```{r}
+```{r moran's I of SL residuals, message=FALSE, warning=FALSE}
 
-SL_res<-SL$residuals
-
-SL_resMoran<-moran(SL_res, queenlist, n=length(queenlist$neighbours), S0=Szero(queenlist))$`I`
-SL_resMoran
-SL_resMoranMc<-moran.mc(SL_res, queenlist,999, alternative="two.sided")
-SL_resMoranMc
+SL_moranMc<-moran.mc(SL$residuals, queenlist,999, alternative="two.sided")
+SL_moranMc
 
 ```
 
-```{r}
+```{r moran's I of SL residuals histogram, message=FALSE, warning=FALSE}
 
-SL_spatial_lag <- lag.listw(queenlist, SL_res)
+ggplot(data.frame(res = SL$residuals), aes(x = res)) +
+  geom_histogram(bins = 100, fill = "#283d3b") +
+  geom_vline(xintercept =SL_moranMc$statistic, color = "#c44536", linetype = 'dashed', size = 1) +
+  labs(title = "Observed and Permuted Moran's I of Spatial Lag Regression Residuals",
+       subtitle = "Observed Moran's I in Red",
+       x = "Moran's I",
+       y = "Count") +
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
 
-# Create a data frame with the variable and its spatial lag
-SL_moran_df <- data.frame(
-  residuals =SL_res,
-  spatial_lag = SL_spatial_lag
-)
+```
 
-# Plot using ggplot
-ggplot(SL_moran_df, aes(x = residuals, y = spatial_lag)) +
-  geom_point(color = "blue", alpha = 0.7) +  # Scatter plot points
-  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Linear regression line
-  labs(title = "Moran Scatter Plot",
-       x = "LNMEDHVAL",
+```{r moran's I of SL residuals scatter plot, message=FALSE, warning=FALSE}
+
+ggplot(data = data.frame(
+  residuals =SL$residuals,
+  spatial_lag = lag.listw(queenlist, SL$residuals)
+), aes(x = residuals, y = spatial_lag)) +
+  geom_point(color = "#283d3b", alpha = 0.9, size = 0.6) +  
+  geom_smooth(method = "lm", color = "#c44536", se = FALSE) + 
+  labs(title = "Moran's I Scatter Plot for Spatial Lag Regression Residuals",
+       x = "Logged Median House Value",
        y = "Spatial Lag of LNMEDHVAL") +
-  theme_minimal()
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
 
 ```
 
@@ -537,34 +561,53 @@ Talk about the LAMBDA term in the spatial error regression output. State whether
 Are the remaining terms (i.e., the predictors LNNBELPOV, PCTBACHMOR, PCTSINGLES, and PCTVACANT) in the model significant? 
 Compare these results to OLS results.
 
-```{r}
-
-# running spatial error regression
+```{r spatial error regression, message=FALSE, warning=FALSE}
 
 SE <- errorsarlm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=regData, queenlist)
 summary(SE)
+
 ```
 
 State whether, based on the Breusch-Pagan test, the spatial lag regression residuals are still heteroscedastic? 
 
-```{r}
+```{r SE heteroscedasticity tests, message=FALSE, warning=FALSE}
 
-#Prints the results of the Breusch-Pagan Test to assess whether heteroscedasticity is present (package: lmtest)
+# Breusch-Pagan Test 
 bptest.Sarlm(SE, studentize=FALSE)
 
 ```
+
 Compare the Spatial Error regression and OLS regression based on the Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and the Likelihood Ratio Test. 
 
-```{r}
+```{r compare OLS SL and SE, message=FALSE, warning=FALSE}
 
-BIC(OLS)
-BIC(SE)
+# Akaike Information Criterion
+aic_se <- AIC(SE)
+
+# Schwarz Criterion
+bic_se <- BIC(SE)
+
+# The Log Likelihood
+loglik_se <- logLik(SE)
+
+results <- data.frame(
+  Model = c("OLS Regression", "Spatial Lag Regression", "Spatial Error Regression"),
+  AIC = c(aic_ols, aic_sl, aic_se),
+  SchwarzCriterion = c(bic_ols, bic_sl, bic_se),
+  LogLikelihood = c(loglik_ols, loglik_sl, loglik_se)
+)
+
+results %>%
+  kable(row.names = FALSE) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) 
+
 
 ```
 
-```{r}
+```{r log likelihood ratio test for SE, message=FALSE, warning=FALSE}
 
-LR.Sarlm(SE, OLS)
+lr_test <- LR.Sarlm(SE, OLS)
+lr_test
 
 ```
 
@@ -572,233 +615,271 @@ Present the Moran’s I scatterplot of spatial error regression residuals. Does 
 Overall, which model is doing better based on all of these criteria?
 
 
-```{r}
+```{r moran's I of SE residuals, message=FALSE, warning=FALSE}
 
-SE_res<-residuals(SE)
-SE_resMoranMc<-moran.mc(SE_res, queenlist, 999, alternative="two.sided")
-SE_resMoranMc
-```
-
-```{r}
-
-SE_spatial_lag <- lag.listw(queenlist, SE_res)
-
-# Create a data frame with the variable and its spatial lag
-SE_moran_df <- data.frame(
-  residuals =SE_res,
-  spatial_lag = SE_spatial_lag
-)
-
-# Plot using ggplot
-ggplot(SE_moran_df, aes(x = residuals, y = spatial_lag)) +
-  geom_point(color = "blue", alpha = 0.7) +  # Scatter plot points
-  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Linear regression line
-  labs(title = "Moran Scatter Plot",
-       x = "LNMEDHVAL",
-       y = "Spatial Error of LNMEDHVAL") +
-  theme_minimal()
+SE_moranMc<-moran.mc(residuals(SE), queenlist,999, alternative="two.sided")
+SE_moranMc
 
 ```
 
+```{r moran's I of SE residuals histogram, message=FALSE, warning=FALSE}
+
+ggplot(data.frame(res = residuals(SE)), aes(x = res)) +
+  geom_histogram(bins = 100, fill = "#283d3b") +
+  geom_vline(xintercept =SE_moranMc$statistic, color = "#c44536", linetype = 'dashed', size = 1) +
+  labs(title = "Observed and Permuted Moran's I of Spatial Error Regression Residuals",
+       subtitle = "Observed Moran's I in Red",
+       x = "Moran's I",
+       y = "Count") +
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
+
+
+```
+
+
+```{r moran's I of SE residuals scatter plot, message=FALSE, warning=FALSE}
+
+
+ggplot(data = data.frame(
+  residuals = residuals(SE),
+  spatial_lag = lag.listw(queenlist, residuals(SE))
+), aes(x = residuals, y = spatial_lag)) +
+  geom_point(color = "#283d3b", alpha = 0.9, size = 0.6) +  
+  geom_smooth(method = "lm", color = "#c44536", se = FALSE) + 
+  labs(title = "Moran's I Scatter Plot for Spatial Error Regression Residuals",
+       x = "Logged Median House Value",
+       y = "Spatial Lag of LNMEDHVAL") +
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
+
+```
 
 Compare the Spatial Lag and Spatial Error results with each other
 Which model has better (lower) Akaike Information Criterion and Schwarz Information Criterion values?
 
 ## Geographically Weighted Regression (GWR) Results
 
-```{r}
-
-# running GWR
-
-shps <- as(regData, 'Spatial')  
-class (shps)
-
-```
-
-
-
-```{r}
-
-bw<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
-            data=shps,
-            method = "aic",
-            adapt = TRUE)
-bw
-```
-
 Compare the (overall) R-squared of the GWR regression with the R-squared of the OLS regression. State which regression method seems to be doing a better job of explaining the variance in the dependent variable.
 Compare the Akaike Information Criteria (AIC and not AICc) of GWR with those of OLS, Spatial Lag and Spatial Error models. Which model seems to be doing a better job based on that (remember, the lower the Akaike Information Criterion, the better the fit).
 
-```{r}
+```{r gwr, message=FALSE, warning=FALSE, eval=FALSE}
+
+regDatashps <- as(regData, 'Spatial')  
+bw<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
+            data=regDatashps,
+            method = "aic",
+            adapt = TRUE)
 gwrmodel<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
-              data=shps,
-              adapt = bw, #adaptive bandwidth determined by proportion of observations accounted for
+              data=regDatashps,
+              adapt = bw, # adaptive bandwidth
               gweight=gwr.Gauss,
-              se.fit=TRUE, #to return local standard errors
+              se.fit=TRUE, 
               hatmatrix = TRUE)
+```
+
+
+```{r load data, message=FALSE, warning=FALSE, include=FALSE}
+
+bw <- readRDS(here("data", "bandwidth_gwr.rds"))
+gwrmodel <- readRDS(here("data", "gwrmodel.rds"))
 gwrmodel
 ```
 
 Present and discuss the choropleth map of local R-squares. 
 
-```{r}
+```{r local R-squares choropleth, message=FALSE, warning=FALSE}
 
 gwrresults<-as.data.frame(gwrmodel$SDF)
-shps$localR2<-gwrresults$localR2
-
-```
-
-```{r}
-
-
-shps_sf <- st_as_sf(shps)
-# Plot the choropleth map
-ggplot(data = shps_sf) +
-  geom_sf(aes(fill = localR2), color = NA) +  # Use the localR2 for the fill
-  scale_fill_gradientn(
-    colors = RColorBrewer::brewer.pal(9, "Reds"),   # 'Blues' palette from RColorBrewer
-    breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9), # Define custom breaks
-    limits = c(0, 0.9),   # Limit the scale between 0 and 0.7
-    name = "Local R-Squared"  # Label the legend
-  ) +
-  theme_minimal() +  # Minimal theme for clean presentation
-  labs(title = "Local R-Squared from GWR", x = "", y = "") +  # Add a title
-  theme(legend.position = "right",  # Position the legend on the right
-        panel.grid.major = element_blank(),  # Remove grid lines for a clean look
-        panel.background = element_blank())  # Remove background
+regDatashps$localR2<-gwrresults$localR2
+regDatashps_sf <- st_as_sf(regDatashps)
+ggplot(data = regDatashps_sf) +
+  geom_sf(aes(fill = localR2), color = NA) +  
+  scale_fill_gradientn(colors = c("#FAF9F6", "#c44536"), 
+                       name = "Logged Median House Value", 
+                       na.value = "transparent")+
+  labs(title = "Local R-Squared from GWR", x = "", y = "") + 
+   theme(legend.text = element_text(size = 9),
+        legend.title = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.subtitle = element_text(size = 9, face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill = NA, size = 0.8))
 
 ```
 
 Present the Moran’s I scatterplot of GWR residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals? What about the Spatial Lag and Spatial Error Residuals.
 
-```{r}
 
-gwr_residuals <- gwrresults$gwr.e
-gwr_resMoranMc<-moran.mc(gwr_residuals, queenlist, 999, alternative="two.sided")
-gwr_resMoranMc
-```
+```{r moran's I of gwr residuals, message=FALSE, warning=FALSE}
 
-```{r}
-
-gwr_spatial_lag <- lag.listw(queenlist, gwr_residuals)
-
-# Create a data frame with the variable and its spatial lag
-gwr_moran_df <- data.frame(
-  residuals = gwr_residuals,
-  spatial_lag = gwr_spatial_lag
-)
-
-# Plot using ggplot
-ggplot(gwr_moran_df, aes(x = residuals, y = spatial_lag)) +
-  geom_point(color = "blue", alpha = 0.7) +  # Scatter plot points
-  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Linear regression line
-  labs(title = "Moran Scatter Plot",
-       x = "LNMEDHVAL",
-       y = "Spatial Lagged of LNMEDHVAL") +
-  theme_minimal()
-
-
+GWR_moranMc<-moran.mc(gwrresults$gwr.e, queenlist, 999, alternative="two.sided")
+GWR_moranMc
 
 ```
 
-```{r}
+```{r moran's I of gwr residuals histogram, message=FALSE, warning=FALSE}
 
-gwr_moranMC_df <- data.frame(gwr_resMoranMc = gwr_resMoranMc$res)
-
-
-ggplot(gwr_moranMC_df, aes(x = gwr_resMoranMc)) +
-  geom_histogram(bins = 100, fill = 'blue', color = 'black', alpha = 0.7) +
-  geom_vline(xintercept = 0.033425 , color = 'red', linetype = 'dashed', size = 1.2) +
-  labs(title = "Distribution of Moran's I from Random Permutations",
+ggplot(data.frame(res = gwrresults$gwr.e), aes(x = res)) +
+  geom_histogram(bins = 100, fill = "#283d3b") +
+  geom_vline(xintercept =GWR_moranMc$statistic, color = "#c44536", linetype = 'dashed', size = 1) +
+  labs(title = "Observed and Permuted Moran's I of Geographically Weighted Regression Residuals",
+       subtitle = "Observed Moran's I in Red",
        x = "Moran's I",
-       y = "Frequency") +
-  theme_minimal()
+       y = "Count") +
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
+
+```
+
+
+```{r moran's I of gwr residuals scatter plot, message=FALSE, warning=FALSE}
+
+ggplot(data = data.frame(
+  residuals = gwrresults$gwr.e,
+  spatial_lag = lag.listw(queenlist, gwrresults$gwr.e)
+), aes(x = residuals, y = spatial_lag)) +
+  geom_point(color = "#283d3b", alpha = 0.9, size = 0.6) +  
+  geom_smooth(method = "lm", color = "#c44536", se = FALSE) + 
+  labs(title = "Moran's I Scatter Plot for Geographically Weighted Regression Residuals",
+       x = "Logged Median House Value",
+       y = "Spatial Lag of LNMEDHVAL") +
+  theme_light() +   
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8))
+
+
 
 ```
 
 Present the maps of coefficients divided by the standard error that you created earlier. Are there locations in the city where the relationships between each of the predictors and the dependent variable possibly significant?
 
-```{r}
-# present maps of the ratio of the beta coefficients and the standard error estimates. 
-# Use dark red when the ratio is < - 2, pink when the ratio is between 0 and -2, light blue when the ratio is between 0 and 2, and dark blue when the ratio is > 2.
+```{r ratio of coefficients to standard error, message=FALSE, warning=FALSE}
 
-
-shps$coefPCTVACANTst<-gwrresults$PCTVACANT/gwrresults$PCTVACANT_se
-shps$coefPCTSINGLESst<-gwrresults$PCTSINGLES/gwrresults$PCTSINGLES_se
-shps$coefPCTBACHMORst<-gwrresults$PCTBACHMOR/gwrresults$PCTBACHMOR_se
-shps$coefLNNBELPOVst<-gwrresults$LNNBELPOV/gwrresults$LNNBELPOV_se
-
-shps_sf <- st_as_sf(shps)
-
+regDatashps_sf$coefPCTVACANTst<-gwrresults$PCTVACANT/gwrresults$PCTVACANT_se
+regDatashps_sf$coefPCTSINGLESst<-gwrresults$PCTSINGLES/gwrresults$PCTSINGLES_se
+regDatashps_sf$coefPCTBACHMORst<-gwrresults$PCTBACHMOR/gwrresults$PCTBACHMOR_se
+regDatashps_sf$coefLNNBELPOVst<-gwrresults$LNNBELPOV/gwrresults$LNNBELPOV_se
 
 ```
 
 
-```{r}
+```{r ratio of coefficients to standard error plot, message=FALSE, warning=FALSE, fig.width=10, fig.height=10}
 
-# Categorize the standardized coefficient using cut
-shps_sf$coefPCTVACANTst_cat <- cut(shps_sf$coefPCTVACANTst, 
+regDatashps_sf$coefPCTVACANTst_cat <- cut(regDatashps_sf$coefPCTVACANTst, 
                                    breaks = c(-Inf, -2, 0, 2, Inf), 
                                    labels = c("< -2", "-2 to 0", "0 to 2", "> 2"))
-shps_sf$coefPCTSINGLESst_cat <- cut(shps_sf$coefPCTSINGLESst, 
-                                   breaks = c(-Inf, -2, 0, 2, Inf), 
-                                   labels = c("< -2", "-2 to 0", "0 to 2", "> 2"))
-
-shps_sf$coefPCTBACHMORst_cat <- cut(shps_sf$coefPCTBACHMORst,
+regDatashps_sf$coefPCTSINGLESst_cat <- cut(regDatashps_sf$coefPCTSINGLESst, 
                                    breaks = c(-Inf, -2, 0, 2, Inf), 
                                    labels = c("< -2", "-2 to 0", "0 to 2", "> 2"))
 
-shps_sf$coefLNNBELPOVst_cat <- cut(shps_sf$coefLNNBELPOVst,
+regDatashps_sf$coefPCTBACHMORst_cat <- cut(regDatashps_sf$coefPCTBACHMORst,
+                                   breaks = c(-Inf, -2, 0, 2, Inf), 
+                                   labels = c("< -2", "-2 to 0", "0 to 2", "> 2"))
+
+regDatashps_sf$coefLNNBELPOVst_cat <- cut(regDatashps_sf$coefLNNBELPOVst,
                                    breaks = c(-Inf, -2, 0, 2, Inf), 
                                    labels = c("< -2", "-2 to 0", "0 to 2", "> 2"))
 
 
-
-
-# Plot the categorized data
-ggplot(shps_sf) +
-    geom_sf(aes(fill = coefPCTVACANTst_cat), color = NA) +  # Use the categorized variable
+p1 <- ggplot(regDatashps_sf) +
+    geom_sf(aes(fill = coefPCTVACANTst_cat), color = NA) +  
     scale_fill_manual(
-      values = c("darkred", "pink", "lightblue", "darkblue"),  # 4 color values for 4 categories
-      name = "Ratio Category"  # Legend title
+      values = c("#c44536", "#f1b1a6", "#8fa7a5", "#283d3b"), 
+      name = "Ratio Category"  
     ) +
-    theme_minimal() +
-    theme(legend.position = "right")
+   labs(title = "PCTVACANT Coefficient to Standard Error",
+       x = "", y = "") +
+   theme(legend.text = element_text(size = 9),
+        legend.title = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.subtitle = element_text(size = 9, face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill = NA, size = 0.8))
 
-```
-
-```{r}
-ggplot(shps_sf) +
-    geom_sf(aes(fill = coefPCTSINGLESst_cat), color = NA) +  # Use the categorized variable
+p2 <- ggplot(regDatashps_sf) +
+    geom_sf(aes(fill = coefPCTSINGLESst_cat), color = NA) +  
     scale_fill_manual(
-      values = c("darkred", "pink", "lightblue", "darkblue"),  # 4 color values for 4 categories
-      name = "Ratio Category"  # Legend title
+      values = c("#c44536", "#f1b1a6", "#8fa7a5", "#283d3b"), 
+      name = "Ratio Category"  
     ) +
-    theme_minimal() +
-    theme(legend.position = "right")
+   labs(title = "PCTSINGLES Coefficient to Standard Error",
+       x = "", y = "") +
+   theme(legend.text = element_text(size = 9),
+        legend.title = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.subtitle = element_text(size = 9, face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill = NA, size = 0.8))
 
-```
 
-```{r}
-ggplot(shps_sf) +
-    geom_sf(aes(fill = coefPCTBACHMORst_cat), color = NA) +  # Use the categorized variable
+p3 <- ggplot(regDatashps_sf) +
+    geom_sf(aes(fill = coefPCTBACHMORst_cat), color = NA) +  
     scale_fill_manual(
-      values = c("darkred", "pink", "lightblue", "darkblue"),  # 4 color values for 4 categories
-      name = "Ratio Category"  # Legend title
+      values = c("#c44536", "#f1b1a6", "#8fa7a5", "#283d3b"), 
+      name = "Ratio Category"  
     ) +
-    theme_minimal() +
-    theme(legend.position = "right")
-```
+   labs(title = "PCTBACHMOR Coefficient to Standard Error",
+       x = "", y = "") +
+   theme(legend.text = element_text(size = 9),
+        legend.title = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.subtitle = element_text(size = 9, face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill = NA, size = 0.8))
 
-```{r}
-ggplot(shps_sf) +
-    geom_sf(aes(fill = coefLNNBELPOVst_cat), color = NA) +  # Use the categorized variable
+p4 <- ggplot(regDatashps_sf) +
+    geom_sf(aes(fill = coefLNNBELPOVst_cat), color = NA) +  
     scale_fill_manual(
-      values = c("darkred", "pink", "lightblue", "darkblue"),  # 4 color values for 4 categories
-      name = "Ratio Category"  # Legend title
+      values = c("#c44536", "#f1b1a6", "#8fa7a5", "#283d3b"), 
+      name = "Ratio Category"  
     ) +
-    theme_minimal() +
-    theme(legend.position = "right")
+   labs(title = "LNNBELPOV Coefficient to Standard Error",
+       x = "", y = "") +
+   theme(legend.text = element_text(size = 9),
+        legend.title = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.subtitle = element_text(size = 9, face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill = NA, size = 0.8))
+
+p1 + p2 + p3 + p4 + 
+  plot_layout(ncol = 2)
 ```
 
 # Discussion 
