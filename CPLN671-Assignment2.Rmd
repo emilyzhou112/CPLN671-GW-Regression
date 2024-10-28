@@ -57,7 +57,7 @@ regData <- st_read(here("data", "RegressionData.shp"))
 
 ```
 
-# Introduction
+# Introduction - Emma
 
 a)	State the problem and the setting of the analysis (Philadelphia).
 b)	Indicate that in the previous report, you carried out OLS regression to examine the relationship between your dependent variable and predictors (state what the dependent variables and predictors are).
@@ -66,7 +66,7 @@ d)	Mention that the purpose of this report is to use spatial lag, spatial error 
 
 # Methods 
 
-## Spatial Autocorrelation
+## Spatial Autocorrelation - Emma
 
 Mention the 1st Law of Geography
 
@@ -78,7 +78,7 @@ Talk about how you test whether the spatial autocorrelation (Moran’s I) is sig
 
 Describe the concept of local spatial autocorrelation (no need for formulas here), and how the significance tests are carried out. 
 
-## Ordinary Least Squares (OLS) Regression
+## Ordinary Least Squares (OLS) Regression - Ziyi
 
 Begin by giving a brief (3-5 sentence) overview of OLS regression. Specifically, list the assumptions of OLS. Refer the reader to your HW 1 for more information on OLS.
 
@@ -87,7 +87,7 @@ State that when the data has a spatial component, the assumption that your error
 State that R also has a way of testing other regression assumptions. The first is the assumption of homoscedasticity, which is tied to the assumption of independence of errors.State which test(s) is/are used to examine data for heteroscedasticity in R, and state the null and alternative hypotheses. Another assumption is that of normality of errors. State which test is used to test for normality of errors in R, and state the null and alternative hypotheses.
 
 
-## Spatial Lag and Spatial Error Regression
+## Spatial Lag and Spatial Error Regression - Emily
 
 State that we will be using R for running spatial lag and spatial error regressions. 
 
@@ -104,7 +104,7 @@ Be sure to describe what each of the above criteria is, and how you decide which
 
 State that another way of comparing OLS results with spatial lag and spatial error results is by looking at the Moran’s I of regression residuals. Indicate how you would decide which model is better based on this criterion.
 
-## Geographically Weighted Regression (GWR)
+## Geographically Weighted Regression (GWR) - Ziyi
 
 State that you will do your GWR analyses in R.
 Introduce GWR by talking about the concepts of Simpson’s paradox and local regression.
@@ -119,7 +119,7 @@ Indicate why p-values are not part of the GWR output.
 
 # Results
 
-## Global and Local Moran's I
+## Global and Local Moran's I - Emma
 
 Present and describe the global Moran’s I value of the dependent variable and the random permutations test results.
 Is LNMEDHVAL significantly spatially autocorrelated? 
@@ -272,7 +272,7 @@ hl.plot(regData, queenlist)
 
 ```
 
-## OLS Regression Results
+## OLS Regression Results - Ziyi
 
 Give a brief 2 sentence overview of the OLS results (feel free to paste this from your description in HW 1). That is, simply indicate which predictors are significant and what % of variance in LNMEDHVAL has been explained by the model. 
 
@@ -442,7 +442,7 @@ ggplot(data = data.frame(
 
 ## Spatial Lag and Spatial Error Regression Results
 
-### Spatial Lag Regression
+### Spatial Lag Regression - Emily
 
 Present results of Spatial Lag regression
 Talk about the W_LNMEDHVAL term in the spatial lag regression output. State whether it is significant, and how the results can be interpreted.
@@ -554,7 +554,7 @@ ggplot(data = data.frame(
 
 ```
 
-### Spatial Error Regression
+### Spatial Error Regression - Emily
 
 Present results of Spatial Error regression (call this Table 3)
 Talk about the LAMBDA term in the spatial error regression output. State whether it is significant, and how the results can be interpreted.
@@ -666,7 +666,7 @@ ggplot(data = data.frame(
 Compare the Spatial Lag and Spatial Error results with each other
 Which model has better (lower) Akaike Information Criterion and Schwarz Information Criterion values?
 
-## Geographically Weighted Regression (GWR) Results
+## Geographically Weighted Regression (GWR) Results - Ziyi
 
 Compare the (overall) R-squared of the GWR regression with the R-squared of the OLS regression. State which regression method seems to be doing a better job of explaining the variance in the dependent variable.
 Compare the Akaike Information Criteria (AIC and not AICc) of GWR with those of OLS, Spatial Lag and Spatial Error models. Which model seems to be doing a better job based on that (remember, the lower the Akaike Information Criterion, the better the fit).
@@ -882,7 +882,7 @@ p1 + p2 + p3 + p4 +
   plot_layout(ncol = 2)
 ```
 
-# Discussion 
+# Discussion - Emily 
 
 a)	In a couple sentences, recap what you did in the paper and your findings. Discuss what conclusions you can draw, and which of the four regression methods (OLS, Spatial Lag, Spatial Error, GWR) was the best, based on the results. 
 
