@@ -53,7 +53,8 @@ package.check <- lapply(
 
 ```{r load data 1, message=FALSE, warning=FALSE, include=FALSE}
 
-regData <- st_read(here("CPLN671-GW-Regression-main", "data", "RegressionData.shp"))
+here::here()
+regData <- st_read(here("data", "RegressionData.shp"))
 
 ```
 
@@ -95,13 +96,29 @@ where 𝑁 is the number of spatial units, 𝑥𝑖and 𝑥𝑗are the values of
 Testing the significance of spatial autocorrelation involves evaluating whether the observed Moran's I differs from what would be expected under spatial randomness. In hypothesis testing, the null hypothesis (𝐻0) is that there is no spatial autocorrelation, while the alternative (𝐻𝑎) posits the presence of spatial autocorrelation. Using random permutations of data values across locations, we generate a reference distribution of Moran's I under the null hypothesis and compare the observed statistic to this distribution.
 
 Beyond global spatial autocorrelation measured by Moran's I, local spatial autocorrelation identifies specific areas with clustering or dispersion. The significance of local Moran's I is tested similarly using random permutations, and results can highlight statistically significant clusters or outliers that global measures might miss.
+
+
 ## Ordinary Least Squares (OLS) Regression - Ziyi
 
-Begin by giving a brief (3-5 sentence) overview of OLS regression. Specifically, list the assumptions of OLS. Refer the reader to your HW 1 for more information on OLS.
+*Begin by giving a brief (3-5 sentence) overview of OLS regression. Specifically, list the assumptions of OLS. Refer the reader to your HW 1 for more information on OLS.*
 
-State that when the data has a spatial component, the assumption that your errors are random/independent often doesn’t hold. Indicate that you can test the assumption by examining the spatial autocorrelation of the residuals using Moran’s I. Indicate that another way to test OLS residuals for spatial autocorrelation is to regress them on nearby residuals (here, these nearby residuals are residuals at neighboring block groups, as defined by the Queen matrix). 
+Ordinary Least Squares (OLS) regression is a statistical technique for estimating the relationship between a dependent variable and one or more independent variables by minimizing the squared differences between observed and predicted values. Key assumptions of OLS include linearity, independence of observations, homoscedasticity (constant error variance), normality of errors, and no multicollinearity among predictors.
 
-State that R also has a way of testing other regression assumptions. The first is the assumption of homoscedasticity, which is tied to the assumption of independence of errors.State which test(s) is/are used to examine data for heteroscedasticity in R, and state the null and alternative hypotheses. Another assumption is that of normality of errors. State which test is used to test for normality of errors in R, and state the null and alternative hypotheses.
+In HW 1, we used OLS regression to assess how vacancy rates (PCTVACANT), single-family housing percentage, educational attainment, and poverty levels influence median house value. All predictors were statistically significant, with vacancy rates and poverty levels negatively affecting house values, while single-family housing and educational attainment had positive effects. The model’s R² was 0.6623, explaining 66% of the variance in house values. However, some predictors exhibited non-linear patterns, and spatial autocorrelation suggested dependence among observations, indicating that future models could benefit from spatial regression techniques.
+
+*State that when the data has a spatial component, the assumption that your errors are random/independent often doesn’t hold. Indicate that you can test the assumption by examining the spatial autocorrelation of the residuals using Moran’s I. Indicate that another way to test OLS residuals for spatial autocorrelation is to regress them on nearby residuals (here, these nearby residuals are residuals at neighboring block groups, as defined by the Queen matrix). *
+
+When data has a spatial component, the assumption that errors are random and independent often doesn’t hold, as nearby observations may exhibit similar error patterns. To test this, we can examine the spatial autocorrelation of the residuals using Moran’s I, which quantifies the degree of clustering in residuals. Another approach is to regress the residuals on nearby residuals from neighboring areas, such as block groups defined by the Queen matrix, to identify any spatial dependence. These tests help determine if spatial autocorrelation is present, indicating a need for spatial regression techniques.
+
+*State that R also has a way of testing other regression assumptions. The first is the assumption of homoscedasticity, which is tied to the assumption of independence of errors.State which test(s) is/are used to examine data for heteroscedasticity in R, and state the null and alternative hypotheses. Another assumption is that of normality of errors. State which test is used to test for normality of errors in R, and state the null and alternative hypotheses.*
+
+In R, there are methods to test other key regression assumptions. For homoscedasticity (constant error variance), which is related to the independence of errors, we can use the *Breusch-Pagan test*. The null hypothesis (H₀) for these tests is that errors are homoscedastic, while the alternative hypothesis (H₁) is that errors exhibit heteroscedasticity.
+
+To test the normality of errors, we can use the *Jarque-Bera test* in R; The null hypothesis is that residuals are normal, and the alternative hypothesis is that they are not normal. We want to not be able to reject the null hypothesis (i.e., get a p-value of 0.05 or higher)
+
+
+
+
 
 
 ## Spatial Lag and Spatial Error Regression - Emily
@@ -123,16 +140,23 @@ State that another way of comparing OLS results with spatial lag and spatial err
 
 ## Geographically Weighted Regression (GWR) - Ziyi
 
-State that you will do your GWR analyses in R.
-Introduce GWR by talking about the concepts of Simpson’s paradox and local regression.
-Present the GWR equations and explain them in your own words
-Talk about how local regression is run
-Discuss the concept of bandwidth, and talk about adaptive vs. fixed bandwidth.
-State that here, you will be using adaptive bandwidth
-Explain why adaptive bandwidth is more appropriate in this problem than the fixed bandwidth
-Mention that the OLS assumptions still hold in GWR.
-When mentioning multicollinearity, talk about the Condition Number, and the issues of multicollinearity/clustering in GWR.
-Indicate why p-values are not part of the GWR output.
+*State that you will do your GWR analyses in R.*
+*Introduce GWR by talking about the concepts of Simpson’s paradox and local regression.Present the GWR equations and explain them in your own words. Talk about how local regression is run. Discuss the concept of bandwidth, and talk about adaptive vs. fixed bandwidth.State that here, you will be using adaptive bandwidth*
+
+*Explain why adaptive bandwidth is more appropriate in this problem than the fixed bandwidth. Mention that the OLS assumptions still hold in GWR. When mentioning multicollinearity, talk about the Condition Number, and the issues of multicollinearity/clustering in GWR. Indicate why p-values are not part of the GWR output.*
+
+We will conduct our Geographically Weighted Regression (GWR) analyses in R. GWR is a form of local regression that helps address spatial heterogeneity in data, which is essential when analyzing spatial data prone to Simpson’s Paradox — where a trend observed in aggregate data can differ from trends in subsets. GWR allows us to examine relationships at a local level rather than assuming they are uniform across the study area. The general GWR equation can be expressed as:
+
+$$
+y_i = \beta_{0}(u_i, v_i) + \sum \beta_k(u_i, v_i)x_{ik} + \epsilon_i
+$$
+
+where \( y_i \) is the dependent variable at location \( i \), \( x_{ik} \) are the independent variables, \( \beta_{0}(u_i, v_i) \) and \( \beta_k(u_i, v_i) \) represent the intercept and slope coefficients at each location \( (u_i, v_i) \), and \( \epsilon_i \) is the error term. This means that the regression coefficients vary by location, allowing us to capture spatially varying relationships between variables.
+
+
+In GWR, local regression is performed by fitting a regression model at each observation point, using a subset of neighboring points, with weights assigned based on their distance from the focal point. The concept of bandwidth controls the number of neighbors included, influencing how “local” each regression is. There are two types of bandwidths: adaptive and fixed. A fixed bandwidth uses a constant distance for all points, while an adaptive bandwidth varies, adjusting to include a set number of nearby observations regardless of spatial density. Here, we will use adaptive bandwidth, which is more appropriate as it accounts for varying spatial densities, providing a flexible analysis that better captures local relationships in areas with different population distributions.
+
+Although GWR allows for spatial variation in relationships, the standard OLS assumptions (linearity, independence, homoscedasticity, and normality) still apply. Multicollinearity is assessed using the Condition Number, and high multicollinearity can cause issues in GWR, leading to unstable estimates and clustering in parameter estimates. It is also important to note that GWR does not provide p-values for coefficients, as the model focuses on exploring spatial patterns rather than testing global hypotheses.
 
 # Results
 
