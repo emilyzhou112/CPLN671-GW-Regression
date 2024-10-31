@@ -112,6 +112,8 @@ When data has a spatial component, the assumption that errors are random and ind
 
 *State that R also has a way of testing other regression assumptions. The first is the assumption of homoscedasticity, which is tied to the assumption of independence of errors.State which test(s) is/are used to examine data for heteroscedasticity in R, and state the null and alternative hypotheses. Another assumption is that of normality of errors. State which test is used to test for normality of errors in R, and state the null and alternative hypotheses.*
 
+*Needs Double Check*
+
 In R, there are methods to test other key regression assumptions. For homoscedasticity (constant error variance), which is related to the independence of errors, we can use the *Breusch-Pagan test*. The null hypothesis (H₀) for these tests is that errors are homoscedastic, while the alternative hypothesis (H₁) is that errors exhibit heteroscedasticity.
 
 To test the normality of errors, we can use the *Jarque-Bera test* in R; The null hypothesis is that residuals are normal, and the alternative hypothesis is that they are not normal. We want to not be able to reject the null hypothesis (i.e., get a p-value of 0.05 or higher)
@@ -335,7 +337,9 @@ hl.plot(regData, queenlist)
 
 ## OLS Regression Results - Ziyi
 
-Give a brief 2 sentence overview of the OLS results (feel free to paste this from your description in HW 1). That is, simply indicate which predictors are significant and what % of variance in LNMEDHVAL has been explained by the model. 
+*Give a brief 2 sentence overview of the OLS results (feel free to paste this from your description in HW 1). That is, simply indicate which predictors are significant and what % of variance in LNMEDHVAL has been explained by the model. *
+
+All predictors—PCTVACANT, PCTSINGLES, PCTBACHMOR, and LNNBELPOV—are statistically significant in explaining LNMEDHVAL. The model accounts for approximately 66.2% of the variance in LNMEDHVAL, as indicated by the R-squared value of 0.662.
 
 ```{r ols regression, message=FALSE, warning=FALSE}
 
