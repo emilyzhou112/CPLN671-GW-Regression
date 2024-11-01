@@ -367,6 +367,9 @@ Is this conclusion consistent with the conclusion from the residual by predicted
 Include that plot in the current report as well.
 
 
+the result of the tests stands strong
+
+
 ```{r heteroscedasticity tests, message=FALSE, warning=FALSE}
 
 # Breusch-Pagan Test
