@@ -786,9 +786,11 @@ The R-squared for the OLS regression model is 0.662, while the R-squared (Quasi-
 
 *Compare the Akaike Information Criteria (AIC and not AICc) of GWR with those of OLS, Spatial Lag and Spatial Error models. Which model seems to be doing a better job based on that (remember, the lower the Akaike Information Criterion, the better the fit).*
 
-The AIC of GWR is 309, 
+Based on the Akaike Information Criterion (AIC) values, the GWR model, with an AIC of 309, demonstrates the best fit among the models compared. The Spatial Lag model has a higher AIC of 525, followed by the Spatial Error model at 759, and the OLS regression model at 1435. Since a lower AIC indicates a better fit, the GWR model appears to be the most effective in explaining the variance in the data. This suggests that GWR, which accounts for spatial heterogeneity by allowing model coefficients to vary across locations, provides a more accurate and robust fit for this dataset than the other models.
 
 *Present and discuss the choropleth map of local R-squares. *
+
+The choropleth map of local \( R^2 \) values from the GWR model visually demonstrates how effectively the model explains variations in logged median house values across the city. Darker-colored areas, such as the northwestern, parts of the northeastern, and far western regions, indicate a stronger model fit, where the predictors in the model explain a larger proportion of the variability in house values. Conversely, lighter-colored areas, particularly in the northern and western parts of the city, show a weaker model fit, suggesting that the predictors are less effective in capturing the variability in these regions. 
 
 ```{r local R-squares choropleth, message=FALSE, warning=FALSE}
 
