@@ -818,6 +818,9 @@ ggplot(data = regDatashps_sf) +
 
 *Present the Moran’s I scatterplot of GWR residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals? What about the Spatial Lag and Spatial Error Residuals.*
 
+The analysis indicates that the GWR model has successfully reduced spatial autocorrelation in the residuals compared to the OLS model. In the distribution of Moran’s I values for GWR residuals, the observed Moran’s I is close to zero, suggesting minimal spatial autocorrelation and aligning with the assumption of uncorrelated residuals. In contrast, the Moran’s I for the OLS residuals is both positive and statistically significant, indicating a stronger degree of spatial dependence. 
+
+The Spatial Lag model also reduces spatial autocorrelation in the residuals, although not as effectively as the GWR model. The Spatial Error model performs similarly, but the residuals exhibit slightly more spatial autocorrelation than those of the GWR model. Overall, these results suggest that the GWR model provides the best fit in terms of minimizing spatial autocorrelation, capturing local spatial variations more precisely than the Spatial Lag and Spatial Error models. This indicates that GWR is particularly effective for modeling spatial heterogeneity in this dataset.
 
 ```{r morans I of gwr residuals, message=FALSE, warning=FALSE}
 
@@ -844,6 +847,10 @@ ggplot(data.frame(res = gwrresults$gwr.e), aes(x = res)) +
 
 ```
 
+
+The Moran's I scatter plot for the GWR residuals shows minimal spatial autocorrelation, as indicated by the nearly horizontal trend of the line, suggesting that the GWR model has successfully addressed much of the spatial dependency present in the data. 
+
+This is consistent with the earlier histogram results, where the Moran's I value for GWR residuals was close to zero, further affirming that the model effectively captures local spatial variations in logged median house values. 
 
 ```{r morans I of gwr residuals scatter plot, message=FALSE, warning=FALSE}
 
@@ -977,6 +984,15 @@ p4 <- ggplot(regDatashps_sf) +
 p1 + p2 + p3 + p4 + 
   plot_layout(ncol = 2)
 ```
+The vacancy rate generally has a negative impact on housing values, with significant negative effects observed in Center City, northwestern areas, parts of the northeastern region, and the western part of the city. However, there is a localized area in southern Center City where vacancy rates unexpectedly have a positive impact on housing values.
+
+Single-family housing, in general, positively impacts housing values, particularly in the far northeast and far northwest areas, where this effect is more pronounced. Conversely, in some parts of the city—such as eastern Philadelphia, parts of the west, and sections of the south—the impact of single-family housing is negative and statistically significant.
+
+The percentage of residents with a bachelor’s degree generally has a positive impact on housing values, with no areas showing a negative relationship across the city. This positive influence is especially statistically significant in the northern and northeastern parts of the city.
+
+Finally, the poverty rate generally has a negative effect on housing values. This effect is more statistically significant in the southern, eastern, and northwestern parts of the city. 
+
+Overall, these spatial variations highlight how different factors affect housing values uniquely across Philadelphia, emphasizing the importance of localized analysis in understanding property dynamics.
 
 # Discussion - Emily 
 
