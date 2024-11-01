@@ -449,9 +449,11 @@ summary(res.lm)
 
 ```
 
-The results of the regression analysis between the standardized residuals (Standardized_Residuals) and their nearest neighbor residuals (Residuals_NB) indicate a significant spatial autocorrelation. The coefficient for Residuals_NB is 0.7323, with a highly significant p-value, demonstrating a strong positive relationship. This implies that residuals are positively correlated with those of their closest neighbors, confirming spatial dependence.
+
 
 The scatterplot below shows the relationship between the standardized residuals of the OLS model and the residuals of their nearest neighbors. The upward-sloping trend line indicates a positive relationship between these residuals and their neighbors, suggesting spatial autocorrelation
+
+The coefficient for the residuals of their nearest neighbors is 0.7323, with a highly significant p-value, demonstrating a strong positive relationship. This implies that residuals are positively correlated with those of their closest neighbors, confirming spatial dependence.
 
 
 ```{r ols residuals vs nearest neighbor residuals plot, message=FALSE, warning=FALSE}
@@ -469,11 +471,15 @@ ggplot(regData, aes(x = Residuals_NB, y = Standardized_Residuals)) +
         axis.title=element_text(size=8))
 ```
 
-Present the Moran’s I scatterplot and results from the 999 permutations for OLS regression residuals.
-Are you seeing significant spatial autocorrelation in your OLS residuals, and is this problematic?
-Do Moran’s I and the Beta coefficient of weighted (spatially lagged) residuals tell a similar story?
+*Present the Moran’s I scatterplot and results from the 999 permutations for OLS regression residuals.*
+*Are you seeing significant spatial autocorrelation in your OLS residuals, and is this problematic?*
+*Do Moran’s I and the Beta coefficient of weighted (spatially lagged) residuals tell a similar story?*
 
+The Moran’s I scatterplot and the results from the permutations for OLS regression residuals both indicate significant spatial autocorrelation. The scatterplot shows a positive relationship between the logged median house values and their spatially lagged values, with a positive slope, confirming that high values tend to be near other high values, and low values cluster with other low values. The Moran's I statistic from the Monte Carlo simulation is approximately 0.3, with an extremely low p-value, confirming that this spatial autocorrelation is statistically significant.
 
+This significant spatial autocorrelation in the OLS residuals is problematic because it violates the OLS assumption of independent residuals. When residuals are spatially autocorrelated, it suggests that the model is missing spatial structure in the data, which could lead to biased or inefficient estimates.
+
+Both the Moran’s I statistic and the positive beta coefficient from the regression of standardized residuals on their nearest neighbors tell a similar story. They both reveal that spatial dependence is present in the residuals, suggesting that a spatial model, such as Geographically Weighted Regression (GWR) or a spatial autoregressive model, would be more appropriate for capturing the underlying spatial relationships in the data.
 ```{r morans_I_of_OLS_residuals, message=FALSE, warning=FALSE}
 
 OLS_moranMC<-moran.mc(standardized_residuals, queenlist, nsim=999, alternative="two.sided") 
@@ -748,8 +754,7 @@ Which model has better (lower) Akaike Information Criterion and Schwarz Informat
 
 ## Geographically Weighted Regression (GWR) Results - Ziyi
 
-Compare the (overall) R-squared of the GWR regression with the R-squared of the OLS regression. State which regression method seems to be doing a better job of explaining the variance in the dependent variable.
-Compare the Akaike Information Criteria (AIC and not AICc) of GWR with those of OLS, Spatial Lag and Spatial Error models. Which model seems to be doing a better job based on that (remember, the lower the Akaike Information Criterion, the better the fit).
+
 
 ```{r gwr, message=FALSE, warning=FALSE, eval=FALSE}
 
@@ -769,12 +774,21 @@ gwrmodel<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPO
 
 ```{r load data 2, message=FALSE, warning=FALSE, include=FALSE}
 
-bw <- readRDS(here("CPLN671-GW-Regression-main", "data", "bandwidth_gwr.rds"))
-gwrmodel <- readRDS(here("CPLN671-GW-Regression-main", "data", "gwrmodel.rds"))
+bw <- readRDS(here("data", "bandwidth_gwr.rds"))
+gwrmodel <- readRDS(here("data", "gwrmodel.rds"))
+
 gwrmodel
 ```
 
-Present and discuss the choropleth map of local R-squares. 
+*Compare the (overall) R-squared of the GWR regression with the R-squared of the OLS regression. State which regression method seems to be doing a better job of explaining the variance in the dependent variable.*
+
+The R-squared for the OLS regression model is 0.662, while the R-squared (Quasi-global R²) for the GWR model is 0.848. The higher R-squared value of the GWR model indicates that it does a better job of explaining the variance in the dependent variable LNMEDHVAL compared to the OLS model. This improvement suggests that the spatial variability captured by the GWR model provides a more accurate representation of the relationships between the predictors and the dependent variable, as GWR can account for spatial heterogeneity that OLS cannot.
+
+*Compare the Akaike Information Criteria (AIC and not AICc) of GWR with those of OLS, Spatial Lag and Spatial Error models. Which model seems to be doing a better job based on that (remember, the lower the Akaike Information Criterion, the better the fit).*
+
+The AIC of GWR is 309, 
+
+*Present and discuss the choropleth map of local R-squares. *
 
 ```{r local R-squares choropleth, message=FALSE, warning=FALSE}
 
@@ -800,7 +814,7 @@ ggplot(data = regDatashps_sf) +
 
 ```
 
-Present the Moran’s I scatterplot of GWR residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals? What about the Spatial Lag and Spatial Error Residuals.
+*Present the Moran’s I scatterplot of GWR residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals? What about the Spatial Lag and Spatial Error Residuals.*
 
 
 ```{r morans I of gwr residuals, message=FALSE, warning=FALSE}
@@ -851,7 +865,7 @@ ggplot(data = data.frame(
 
 ```
 
-Present the maps of coefficients divided by the standard error that you created earlier. Are there locations in the city where the relationships between each of the predictors and the dependent variable possibly significant?
+*Present the maps of coefficients divided by the standard error that you created earlier. Are there locations in the city where the relationships between each of the predictors and the dependent variable possibly significant?*
 
 ```{r ratio of coefficients to standard error, message=FALSE, warning=FALSE}
 
