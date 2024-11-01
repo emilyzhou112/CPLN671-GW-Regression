@@ -164,8 +164,7 @@ Although GWR allows for spatial variation in relationships, the standard OLS ass
 
 ## Global and Local Moran's I - Emma
 
-Present and describe the global Moran’s I value of the dependent variable and the random permutations test results.
-Is LNMEDHVAL significantly spatially autocorrelated? 
+*Present and describe the global Moran’s I value of the dependent variable and the random permutations test results. Is LNMEDHVAL significantly spatially autocorrelated? *
 
 The Global Moran's I analysis for the dependent variable, LNMEDHVAL (the natural log of median house value), reveals a pronounced level of spatial autocorrelation. With a Moran's I statistic of 0.8, the results indicate a strong positive spatial autocorrelation. This high value suggests that areas with similar median house values tend to cluster geographically within the study area. In other words, neighborhoods with either high or low house values are more likely to be located near other neighborhoods with similar values, rather than being randomly distributed across space. This spatial clustering points to the presence of spatial dependencies in housing values, possibly driven by neighborhood characteristics, socio-economic factors, or other spatial processes influencing property values across the region.
 
@@ -360,15 +359,14 @@ summary(OLS)
 ```
 
 
-Comment on the results of the tests on heteroscedasticity
-Are the results from the different tests consistent with each other? 
-Do they indicate a problem with heteroscedasticity?
-Is this conclusion consistent with the conclusion from the residual by predicted plot you presented in HW 1?
-Include that plot in the current report as well.
+*Comment on the results of the tests on heteroscedasticity*
+*Are the results from the different tests consistent with each other? *
+*Do they indicate a problem with heteroscedasticity?*
+*Is this conclusion consistent with the conclusion from the residual by predicted plot you presented in HW 1?*
+*Include that plot in the current report as well. the result of the tests stands strong*
 
 
-the result of the tests stands strong
-
+The results from the Breusch-Pagan, Koenker-Bassett, and White's tests consistently indicate significant heteroscedasticity in the model, as all p-values are extremely low. This confirms a clear violation of the homoscedasticity assumption in OLS regression. 
 
 ```{r heteroscedasticity tests, message=FALSE, warning=FALSE}
 
@@ -383,6 +381,8 @@ white_test(OLS)
 
 
 ```
+
+The results from the heteroscedasticity tests align with the pattern observed in the scatter plot of standardized residuals versus fitted values. In the plot, the spread of residuals appears to increase with changes in fitted values, suggesting a violation of the constant variance assumption, known as heteroscedasticity. This visual evidence is consistent with the findings from the Breusch-Pagan, Koenker-Bassett, and White tests, all of which indicated significant heteroscedasticity in the model. Together, these results confirm that the model's residuals exhibit non-constant variance, suggesting the need for adjustments to obtain reliable estimates.
 
 ```{r heteroscedasticity plot, message=FALSE, warning=FALSE}
 
@@ -403,10 +403,11 @@ ggplot(regData, aes(x = Fitted, y = Standardized_Residuals)) +
 ```
 
 
-Comment on the results of the test on normality of errors (Jarque-Bera test)
-Do test results indicate a problem with normality?
-Is this conclusion consistent with the histogram of residuals (errors) you presented in HW 1? If not, comment why not.
-Include the histogram in the current report as well. 
+*Comment on the results of the test on normality of errors (Jarque-Bera test)*
+*Do test results indicate a problem with normality?*
+ 
+
+The results of the Jarque-Bera test indicate a significant deviation from normality in the residuals, with an extremely low p-value. This p-value is well below typical significance levels, strongly rejecting the null hypothesis that the residuals are normally distributed. Therefore, the test results confirm a problem with the normality of the errors, suggesting that the residuals do not meet the normality assumption required for OLS regression.
 
 
 ```{r normality of errors, message=FALSE, warning=FALSE}
@@ -416,6 +417,12 @@ jarque.bera.test(OLS$residuals)
 
 
 ```
+
+*Is this conclusion consistent with the histogram of residuals (errors) you presented in HW 1? If not, comment why not.*
+*Include the histogram in the current report as well.*
+
+This result align with the histogram of standardized residuals shown below. The histogram reveals a slight departure from a normal distribution, with indications of skewness and heavier tails, suggesting that the residuals are not perfectly normal. This visual evidence is consistent with the Jarque-Bera test, which produced a highly significant result, indicating a clear violation of the normality assumption. Together, these findings confirm that the residuals do not satisfy the normality assumption required for reliable OLS regression estimates.
+
 ```{r histogram of residuals, message=FALSE, warning=FALSE}
 
 ggplot(regData, aes(x = Standardized_Residuals)) +
@@ -432,8 +439,8 @@ ggplot(regData, aes(x = Standardized_Residuals)) +
 ```
 
 
-Present the scatterplot of OLS_RESIDU by WT_RESIDU and describe the results.
-Is Slope b at the bottom of the scatterplot significant, meaning that there’s significant spatial autocorrelation?
+*Present the scatterplot of OLS_RESIDU by WT_RESIDU and describe the results.*
+*Is Slope b at the bottom of the scatterplot significant, meaning that there’s significant spatial autocorrelation?*
 
 ```{r ols residuals vs nearest neighbor residuals, message=FALSE, warning=FALSE}
 
@@ -441,6 +448,11 @@ res.lm <- lm(Standardized_Residuals ~ Residuals_NB, data=regData)
 summary(res.lm)
 
 ```
+
+The results of the regression analysis between the standardized residuals (Standardized_Residuals) and their nearest neighbor residuals (Residuals_NB) indicate a significant spatial autocorrelation. The coefficient for Residuals_NB is 0.7323, with a highly significant p-value, demonstrating a strong positive relationship. This implies that residuals are positively correlated with those of their closest neighbors, confirming spatial dependence.
+
+The scatterplot below shows the relationship between the standardized residuals of the OLS model and the residuals of their nearest neighbors. The upward-sloping trend line indicates a positive relationship between these residuals and their neighbors, suggesting spatial autocorrelation
+
 
 ```{r ols residuals vs nearest neighbor residuals plot, message=FALSE, warning=FALSE}
 ggplot(regData, aes(x = Residuals_NB, y = Standardized_Residuals)) +
