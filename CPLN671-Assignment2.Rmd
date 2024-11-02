@@ -15,7 +15,7 @@ editor_options:
     wrap: sentence
 ---
 
-Version 2.0 | First Created Oct 22, 2024 | Updated Nov 1, 2024
+Version 2.0 | First Created Oct 22, 2024 | Updated Nov 2, 2024
 
 Keywords: Spatial Error, Spatial Lag, Geographically Weighted Regression, Global & Local Moran's I, Akaiki Information Criterion, Schwarz Criterion, Log Likelihood, Likelihood Ratio Test
 
@@ -313,6 +313,8 @@ hl.plot(regData, queenlist)
 ```
 
 ## OLS Regression Results
+
+Below, we will provide a quick walk through of the OLS regression results. Detail interpretation and dicussion of the results can be found in the [GitHub repository](https://github.com/emilyzhou112/CPLN671-OLS-Regression) for assignment 1.
 
 All predictors in our OLS regression, which include \(\text{PCTSINGLES}\), \(\text{PCTVACANT}\), \(\text{LNNBELPOV}\), and \(\text{PCTBACHMOR}\), are statistically significant in explaining \(\text{LNMEDHVAL}\). The model accounts for approximately 66.2% of the variance, as indicated by the R-squared value of 0.662.
 
@@ -748,7 +750,7 @@ regDatashps_sf <- st_as_sf(regDatashps)
 ggplot(data = regDatashps_sf) +
   geom_sf(aes(fill = localR2), color = NA) +  
   scale_fill_gradientn(colors = c("#FAF9F6", "#c44536"), 
-                       name = "Logged Median House Value", 
+                       name = "Local R-Squared", 
                        na.value = "transparent")+
   labs(title = "Local R-Squared from GWR", x = "", y = "") + 
    theme(legend.text = element_text(size = 9),
