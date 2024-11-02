@@ -382,7 +382,13 @@ white_test(OLS)
 
 ```
 
-The results from the heteroscedasticity tests align with the pattern observed in the scatter plot of standardized residuals versus fitted values. In the plot, the spread of residuals appears to increase with changes in fitted values, suggesting a violation of the constant variance assumption, known as heteroscedasticity. This visual evidence is consistent with the findings from the Breusch-Pagan, Koenker-Bassett, and White tests, all of which indicated significant heteroscedasticity in the model. Together, these results confirm that the model's residuals exhibit non-constant variance, suggesting the need for adjustments to obtain reliable estimates.
+The results from the heteroscedasticity tests align with the pattern observed in the scatter plot of standardized residuals versus fitted values. 
+
+The residuals in this scatter plot show no discernible trend of rising or falling variance with increasing fitted values; instead, they seem to be pretty uniformly distributed around the horizontal line at zero. The fact that there is no obvious funnel shape or systematic variation trend suggests that the assumption of homoscedasticity is reasonably satisfied. 
+
+
+
+In the plot, the spread of residuals appears to increase with changes in fitted values, suggesting a violation of the constant variance assumption, known as heteroscedasticity. This visual evidence is consistent with the findings from the Breusch-Pagan, Koenker-Bassett, and White tests, all of which indicated significant heteroscedasticity in the model. Together, these results confirm that the model's residuals exhibit non-constant variance, suggesting the need for adjustments to obtain reliable estimates.
 
 ```{r heteroscedasticity plot, message=FALSE, warning=FALSE}
 
@@ -820,7 +826,7 @@ ggplot(data = regDatashps_sf) +
 
 The analysis indicates that the GWR model has successfully reduced spatial autocorrelation in the residuals compared to the OLS model. In the distribution of Moran’s I values for GWR residuals, the observed Moran’s I is close to zero, suggesting minimal spatial autocorrelation and aligning with the assumption of uncorrelated residuals. In contrast, the Moran’s I for the OLS residuals is both positive and statistically significant, indicating a stronger degree of spatial dependence. 
 
-The Spatial Lag model also reduces spatial autocorrelation in the residuals, although not as effectively as the GWR model. The Spatial Error model performs similarly, but the residuals exhibit slightly more spatial autocorrelation than those of the GWR model. Overall, these results suggest that the GWR model provides the best fit in terms of minimizing spatial autocorrelation, capturing local spatial variations more precisely than the Spatial Lag and Spatial Error models. This indicates that GWR is particularly effective for modeling spatial heterogeneity in this dataset.
+The spatial lag model also reduces spatial autocorrelation in the residuals, although not as effectively as the GWR model. The spatial error model performs similarly, but the residuals exhibit slightly more spatial autocorrelation than those of the GWR model. Overall, these results suggest that the GWR model provides the best fit in terms of minimizing spatial autocorrelation, capturing local spatial variations more precisely than the spatial lag and spatial error models. This indicates that GWR is particularly effective for modeling spatial heterogeneity in this dataset.
 
 ```{r morans I of gwr residuals, message=FALSE, warning=FALSE}
 

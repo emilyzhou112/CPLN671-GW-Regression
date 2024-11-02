@@ -15,7 +15,7 @@ editor_options:
     wrap: sentence
 ---
 
-Version 1.0 | First Created Oct 22, 2024 | Updated Oct 31, 2024
+Version 2.0 | First Created Oct 22, 2024 | Updated Nov 1, 2024
 
 Keywords: Spatial Error, Spatial Lag, Geographically Weighted Regression, Global & Local Moran's I, Akaiki Information Criterion, Schwarz Criterion, Log Likelihood, Likelihood Ratio Test
 
@@ -79,17 +79,19 @@ where $n$ is the number of observations, $X_i$ and $X_j$ are the values of the v
 
 Here, we use a spatial weight matrix constructed using a "Queen" contiguity method, which defines each unit's neighbors based on shared boundaries or vertices. This matrix remains consistent across the analysis, although statisticians may use different weight matrices to assess model sensitivity to neighbor definitions.
 
-Testing the significance of spatial autocorrelation involves evaluating whether the observed Moran's I differs from what would be expected under spatial randomness. In hypothesis testing, the null hypothesis (\( H_0 \)) is that there is no spatial autocorrelation, while the alternative (\( H_1 \))  posits the presence of spatial autocorrelation. Using random permutations of data values across locations, we generate a reference distribution of Moran's I under the null hypothesis and compare the observed statistic to this distribution.
+Testing the significance of spatial autocorrelation involves evaluating whether the observed Moran's I differs from what would be expected under spatial randomness. In hypothesis testing, the null hypothesis (\( H_0 \)) is that there is no spatial autocorrelation, while the alternative (\( H_a \))  posits the presence of spatial autocorrelation. Using random permutations of data values across locations, we generate a reference distribution of Moran's I under the null hypothesis and compare the observed statistic to this distribution.
 
 Beyond global spatial autocorrelation measured by Moran's I, local spatial autocorrelation identifies specific areas with clustering or dispersion. The significance of local Moran's I is tested similarly using random permutations, and results can highlight statistically significant clusters or outliers that global measures might miss.
 
-## Ordinary Least Squares Regression - Ziyi
+## Ordinary Least Squares Regression
 
-Begin by giving a brief (3-5 sentence) overview of OLS regression. Specifically, list the assumptions of OLS. Refer the reader to your HW 1 for more information on OLS.
+Ordinary Least Squares (OLS) regression is a statistical technique for estimating the relationship between a dependent variable and one or more independent variables by minimizing the squared differences between observed and predicted values. Key assumptions of OLS include linearity, independence of observations, homoscedasticity (constant error variance), normality of errors, and no multicollinearity among predictors.
 
-State that when the data has a spatial component, the assumption that your errors are random/independent often doesn’t hold. Indicate that you can test the assumption by examining the spatial autocorrelation of the residuals using Moran’s I. Indicate that another way to test OLS residuals for spatial autocorrelation is to regress them on nearby residuals (here, these nearby residuals are residuals at neighboring block groups, as defined by the Queen matrix). 
+In our first assignment, we used OLS regression to assess how vacancy rates, single-family housing percentage, educational attainment, and poverty levels influence median house value. All predictors were statistically significant, with vacancy rates and poverty levels negatively affecting house values, while single-family housing and educational attainment had positive effects. The model’s \(R^2\) was 0.66, explaining 66% of the variance in house values. However, some predictors exhibited non-linear patterns, and spatial autocorrelation suggested dependence among observations, indicating that future models could benefit from spatial regression techniques.
 
-State that R also has a way of testing other regression assumptions. The first is the assumption of homoscedasticity, which is tied to the assumption of independence of errors.State which test(s) is/are used to examine data for heteroscedasticity in R, and state the null and alternative hypotheses. Another assumption is that of normality of errors. State which test is used to test for normality of errors in R, and state the null and alternative hypotheses.
+When data has a spatial component, the assumption that errors are random and independent often doesn’t hold, as nearby observations may exhibit similar error patterns. To test this, we can examine the spatial autocorrelation of the residuals using Moran’s I, which quantifies the degree of clustering in residuals. Another approach is to regress the residuals on nearby residuals from neighboring areas, such as block groups defined by the Queen matrix, to identify any spatial dependence. These tests help determine if spatial autocorrelation is present, indicating a need for spatial regression techniques.
+
+In R, there are methods to test other key regression assumptions. For homoscedasticity (constant error variance), which is related to the independence of errors, we use the **Breusch-Pagan Test**, the **Koenker-Bassett Test**, and the **White Test**. The null hypothesis (\( H_0 \)) is that errors are homoscedastic, while the alternative hypothesis (\( H_a \)) is that errors exhibit heteroscedasticity. For normality of errors, we can use the **Jarque-Bera test**. The null hypothesis is that residuals are normal, and the alternative hypothesis is that they are not normal. We want to not be able to reject the null hypothesis (i.e., get a p-value of 0.05 or higher).
 
 
 ## Spatial Lag and Spatial Error Regression
@@ -116,25 +118,28 @@ We compare the results of spatial lag and spatial error regression with OLS to d
 
 The **Log-Likelihood** is associated with the maximum likelihood method of fitting a statistical model to the data and estimating model parameters. Maximum likelihood picks the values of the model parameters that make the data "more likely" than any other values of the parameters would make them.  Higher log-likelihood values indicate a model that better explains the observed data. 
 
-The **Likelihood Ratio Test** is used to formally test whether adding spatial dependence to a model (as in spatial lag or spatial error models) significantly improves model fit compared to OLS. For this test, the null hypothesis (\( H_0 \)) state that the spatial model does not provide a significantly better fit than OLS, while the alternative hypothesis (\( H_1 \)) states that the spatial model provides a significantly better fit than OLS. 
+The **Likelihood Ratio Test** is used to formally test whether adding spatial dependence to a model (as in spatial lag or spatial error models) significantly improves model fit compared to OLS. For this test, the null hypothesis (\( H_0 \)) state that the spatial model does not provide a significantly better fit than OLS, while the alternative hypothesis (\( H_a \)) states that the spatial model provides a significantly better fit than OLS. 
 
 The decision rule is to reject the null hypothesis if the \( LR \) test statistic is significant (i.e., the p-value is below a chosen significance level, typically 0.05), and conclude that the spatial model is a better fit than OLS. If not, OLS may be adequate. *It should be noted that the log likelihood method and the likelihood ratio test should be used for comparing nested models. Spatial lag and spatial error are not a special case of each other – we cannot use the log likelihood ratio to compare them.*
 
 Alternatively, we can also compare the spatial models to OLS using the **Moran's I** statistic, which measures the spatial autocorrelation of the residuals. Moran's I ranges from -1 to 1, where -1 indicates perfect dispersion, 0 indicates no spatial autocorrelation, and 1 indicates perfect correlation. For our models, the goal is to minimize spatial autocorrelation in the residuals.  If the Moran’s I statistic for the residuals of a spatial lag or spatial error model is closer to zero than the Moran’s I for the OLS model, we can conclude that the spatial model better captures spatial dependencies. 
 
 
-## Geographically Weighted Regression - Ziyi
+## Geographically Weighted Regression
 
-State that you will do your GWR analyses in R.
-Introduce GWR by talking about the concepts of Simpson’s paradox and local regression.
-Present the GWR equations and explain them in your own words
-Talk about how local regression is run
-Discuss the concept of bandwidth, and talk about adaptive vs. fixed bandwidth.
-State that here, you will be using adaptive bandwidth
-Explain why adaptive bandwidth is more appropriate in this problem than the fixed bandwidth
-Mention that the OLS assumptions still hold in GWR.
-When mentioning multicollinearity, talk about the Condition Number, and the issues of multicollinearity/clustering in GWR.
-Indicate why p-values are not part of the GWR output.
+We will conduct our Geographically Weighted Regression (GWR) analyses in R. GWR is a form of local regression that helps address spatial heterogeneity in data, which is essential when analyzing spatial data prone to Simpson’s Paradox — where a trend observed in aggregate data can differ from trends in subsets. GWR allows us to examine relationships at a local level rather than assuming they are uniform across the study area. The general GWR equation can be expressed as:
+
+
+$$
+y_i = \beta_{i0} + \sum_{k=1}^{m} \beta_{ik}x_{ik} + \epsilon_i
+$$
+
+where: \( y_i \) is the dependent variable at location \(i\), \( \beta_{i0} \) is the intercept for location \(i\), allowing a unique baseline for each location, \( \beta_{ik} \) is the coefficient for the \(k\)-th predictor at location \(i\), \( x_{ik} \) is the value of the \(k\)-th predictor variable at location \(i\), and \( \epsilon_i \) is the error term at location \(i\).
+
+In GWR, local regression is performed by fitting a regression model at each observation point, using a subset of neighboring points, with weights assigned based on their distance from the focal point. The concept of bandwidth controls the number of neighbors included, influencing how "local" each regression is. There are two types of bandwidths: adaptive and fixed. A fixed bandwidth uses a constant distance for all points, while an adaptive bandwidth varies, adjusting to include a set number of nearby observations regardless of spatial density. Here, we will use adaptive bandwidth, which is more appropriate as it accounts for varying spatial densities, providing a flexible analysis that better captures local relationships in areas with different population distributions.
+
+Although GWR allows for spatial variation in relationships, the standard OLS assumptions (linearity, independence, homoscedasticity, and normality) still apply. Multicollinearity is assessed using the Condition Number, and high multicollinearity can cause issues in GWR, leading to unstable estimates and clustering in parameter estimates. It is also important to note that GWR does not provide p-values for coefficients, as the model focuses on exploring spatial patterns rather than testing global hypotheses.
+
 
 # Results
 
@@ -211,7 +216,7 @@ localmoran <-cbind(regData, as.data.frame(localmoran))
 
 ```
 
-In a Local Moran's I significance map, areas with significant low p-values refers to area whenre the spatial autocorrelation is statistically significant, either hotspots of concentrated high values or cold spots of low values. There areas are mostly found in the northwestern and central parts of the city. As we may see, these areas are then surrounded by areas with slightly higher p-values and then areas with even higher p-values, until p becomes insignificant. 
+In a Local Moran's I significance map, areas with significant low p-values refers to area where the spatial autocorrelation is statistically significant, either hotspots of concentrated high values or cold spots of low values. There areas are mostly found in the northwestern and central parts of the city. As we may see, these areas are then surrounded by areas with slightly higher p-values and then areas with even higher p-values, until p becomes insignificant. 
 
 ```{r local moran significance map, message=FALSE, warning=FALSE}
 
@@ -273,23 +278,22 @@ hl.plot <- function(df, listw) {
   m.local <- local[, 1] - mean(local[, 1])
   signif <- 0.05
   
-  quadrant[m.prop > 0 & m.local > 0] <- 4  # high-high
-  quadrant[m.prop < 0 & m.local < 0] <- 1  # low-low
-  quadrant[m.prop < 0 & m.local > 0] <- 2  # low-high
+  quadrant[m.prop > 0 & m.local > 0] <- 1  # high-high
+  quadrant[m.prop < 0 & m.local < 0] <- 2  # low-low
+  quadrant[m.prop < 0 & m.local > 0] <- 4  # low-high
   quadrant[m.prop > 0 & m.local < 0] <- 3  # high-low
-  quadrant[local[, 5] > signif] <- 0  # insignificant
+  quadrant[local[, 5] > signif] <- 5  # insignificant
   
-  df$quadrant <- factor(quadrant, levels = c(4, 3, 0, 2, 1), 
-                        labels = c("High-High", "High-Low", "Insignificant", "Low-High", "Low-Low"))
+  df$quadrant <- factor(quadrant, levels = c(1, 3, 5, 2, 4), 
+                        labels = c("High-High", "High-Low", "Non-Significant", "Low-Low", "Low-High"))
                           
-  # Ensure df is an sf object
   if (!inherits(df, "sf")) {
     df <- st_as_sf(df)
   }
   
   ggplot(data = df) +
     geom_sf(aes(fill = quadrant), color = "#848884", lwd = 0.07) +
-    scale_fill_brewer(type = "div", palette = 6, name = "Cluster Type") +  # Divergent palette
+    scale_fill_brewer(type = "div", palette = 6, name = "Cluster Type") + 
     labs(title = "Local Moran's I Cluster Map") +
     theme(legend.position="right",
         axis.text.x=element_blank(),
@@ -308,9 +312,10 @@ hl.plot(regData, queenlist)
 
 ```
 
-## OLS Regression Results - Ziyi
+## OLS Regression Results
 
-Give a brief 2 sentence overview of the OLS results (feel free to paste this from your description in HW 1). That is, simply indicate which predictors are significant and what % of variance in LNMEDHVAL has been explained by the model. 
+All predictors in our OLS regression, which include \(\text{PCTSINGLES}\), \(\text{PCTVACANT}\), \(\text{LNNBELPOV}\), and \(\text{PCTBACHMOR}\), are statistically significant in explaining \(\text{LNMEDHVAL}\). The model accounts for approximately 66.2% of the variance, as indicated by the R-squared value of 0.662.
+
 
 ```{r ols regression, message=FALSE, warning=FALSE}
 
@@ -330,13 +335,7 @@ summary(OLS)
 
 ```
 
-
-Comment on the results of the tests on heteroscedasticity
-Are the results from the different tests consistent with each other? 
-Do they indicate a problem with heteroscedasticity?
-Is this conclusion consistent with the conclusion from the residual by predicted plot you presented in HW 1?
-Include that plot in the current report as well.
-
+The results from the Breusch-Pagan, Koenker-Bassett, and White's tests all detect heteroscedasticity in the model, as all p-values are extremely low. This confirms a clear violation of the homoscedasticity assumption in OLS regression. 
 
 ```{r heteroscedasticity tests, message=FALSE, warning=FALSE}
 
@@ -351,6 +350,9 @@ white_test(OLS)
 
 
 ```
+
+Comparing to the scatter plot we made to identify heteroscedasticity from the previous assignment, the residuals in this scatter plot show no discernible trend of rising or falling variance with increasing fitted values; instead, they seem to be pretty uniformly distributed around the horizontal line at zero. Regardless, the Breusch-Pagan test is often more sensitive than a residual plot. Even small deviations that are hard to see visually may be detected.
+
 
 ```{r heteroscedasticity plot, message=FALSE, warning=FALSE}
 
@@ -370,20 +372,18 @@ ggplot(regData, aes(x = Fitted, y = Standardized_Residuals)) +
         axis.title=element_text(size=8))
 ```
 
-
-Comment on the results of the test on normality of errors (Jarque-Bera test)
-Do test results indicate a problem with normality?
-Is this conclusion consistent with the histogram of residuals (errors) you presented in HW 1? If not, comment why not.
-Include the histogram in the current report as well. 
-
+The results of the Jarque-Bera test indicate a significant deviation from normality in the residuals. The p-value is well below typical significance levels, and rejects the null hypothesis that the residuals are normally distributed. Therefore, the test results suggest that the residuals do not meet the normality assumption required for OLS regression.
 
 ```{r normality of errors, message=FALSE, warning=FALSE}
 
 # Jarque-Bera Test 
 jarque.bera.test(OLS$residuals)
 
-
 ```
+
+Comparing to the histogram of standardized residuals from the previous assignment, we may also notice that the residuals are not perfectly normal. The histogram reveals a slight departure from a normal distribution and is left skewed. Despite that the skewness is not very pronounced, it is still consistent with the Jarque-Bera test results. 
+
+
 ```{r histogram of residuals, message=FALSE, warning=FALSE}
 
 ggplot(regData, aes(x = Standardized_Residuals)) +
@@ -399,16 +399,15 @@ ggplot(regData, aes(x = Standardized_Residuals)) +
         axis.title=element_text(size=8))
 ```
 
+The scatterplot below shows the relationship between the standardized residuals of the OLS model and the residuals of their nearest neighbors. The upward-sloping trend line indicates a positive relationship between these residuals and their neighbors, suggesting spatial autocorrelation. The coefficient for the residuals of their nearest neighbors is 0.7323, with a highly significant p-value, demonstrating a strong positive relationship. This implies that residuals are positively correlated with those of their closest neighbors, implying spatial dependence.
 
-Present the scatterplot of OLS_RESIDU by WT_RESIDU and describe the results.
-Is Slope b at the bottom of the scatterplot significant, meaning that there’s significant spatial autocorrelation?
-
-```{r ols residuals vs nearest neighbor residuals, message=FALSE, warning=FALSE}
+```{r ols residuals vs nearest neighbor residuals, message=FALSE, warning=FALSE, include=FALSE}
 
 res.lm <- lm(Standardized_Residuals ~ Residuals_NB, data=regData)
 summary(res.lm)
 
 ```
+
 
 ```{r ols residuals vs nearest neighbor residuals plot, message=FALSE, warning=FALSE}
 ggplot(regData, aes(x = Residuals_NB, y = Standardized_Residuals)) +
@@ -425,9 +424,9 @@ ggplot(regData, aes(x = Residuals_NB, y = Standardized_Residuals)) +
         axis.title=element_text(size=8))
 ```
 
-Present the Moran’s I scatterplot and results from the 999 permutations for OLS regression residuals.
-Are you seeing significant spatial autocorrelation in your OLS residuals, and is this problematic?
-Do Moran’s I and the Beta coefficient of weighted (spatially lagged) residuals tell a similar story?
+The Moran’s I scatterplot and the results from the permutations for OLS regression residuals both indicate significant spatial autocorrelation. The scatterplot shows a positive relationship between the logged median house values and their spatially lagged values, with a positive slope, confirming that high values tend to be near other high values, and low values cluster with other low values. The Moran's I statistic from the Monte Carlo simulation is approximately 0.3, with an extremely low p-value, confirming that this spatial autocorrelation is statistically significant.
+
+This significant spatial autocorrelation in the OLS residuals is problematic because it violates the OLS assumption of independent residuals. When residuals are spatially autocorrelated, it suggests that the model is missing spatial structure in the data, which could lead to biased or inefficient estimates.
 
 
 ```{r moran I of OLS residuals, message=FALSE, warning=FALSE}
@@ -436,14 +435,15 @@ OLS_moranMC<-moran.mc(standardized_residuals, queenlist, nsim=999, alternative="
 OLS_moranMC
 
 ```
+Both the Moran’s I statistic and the positive beta coefficient from the regression of standardized residuals on their nearest neighbors tell a similar story. They both reveal that spatial dependence is present in the residuals, suggesting that a spatial model, such as Geographically Weighted Regression (GWR) or a spatial autoregressive model, would be more appropriate for capturing the underlying spatial relationships in the data.
 
 
-```{r moran I of OLS residuals histogram, message=FALSE, warning=FALSE}
+```{r moran I of OLS residuals histogram and scatterplot, fig.width=10, message=FALSE, warning=FALSE}
 
-ggplot(data.frame(res = OLS_moranMC$res), aes(x = res)) +
+plt1 <- ggplot(data.frame(res = OLS_moranMC$res), aes(x = res)) +
   geom_histogram(bins = 100, fill = "#283d3b") +
   geom_vline(xintercept =OLS_moranMC$statistic, color = "#c44536", linetype = 'dashed', size = 1) +
-  labs(title = "Observed and Permuted Moran's I of OLS Regression Residuals",
+  labs(title = "Observed and Permuted Moran's I of OLS Residuals",
        subtitle = "Observed Moran's I in Red",
        x = "Moran's I",
        y = "Count") +
@@ -454,17 +454,13 @@ ggplot(data.frame(res = OLS_moranMC$res), aes(x = res)) +
         axis.text.y=element_text(size=6), 
         axis.title=element_text(size=8))
 
-```
-
-```{r moran I of OLS residuals scatter plot, message=FALSE, warning=FALSE}
-
-ggplot(data = data.frame(
+plt2 <- ggplot(data = data.frame(
   residuals =standardized_residuals,
   spatial_lag = lag.listw(queenlist, standardized_residuals)
 ), aes(x = residuals, y = spatial_lag)) +
   geom_point(color = "#283d3b", alpha = 0.9, size = 0.6) +  
   geom_smooth(method = "lm", color = "#c44536", se = FALSE) + 
-  labs(title = "Moran's I Scatter Plot for OLS Regression Residuals",
+  labs(title = "Moran's I Scatter Plot for OLS Residuals",
        x = "Logged Median House Value",
        y = "Spatial Lag of LNMEDHVAL") +
   theme_light() +   
@@ -474,7 +470,9 @@ ggplot(data = data.frame(
         axis.text.y=element_text(size=6), 
         axis.title=element_text(size=8))
 
+plt1 + plt2
 ```
+
 
 ## Spatial Lag and Error Regression Results
 
@@ -554,12 +552,12 @@ SL_moranMc
 
 Both the residual histograms as well as the scatter plot support this conclusion. The histogram of residuals is also approximately normally distributed, and the scatter plot of residuals against fitted values shows no clear pattern or trend. All of these suggest that the spatial lag model is a good fit for the data compared to OLS. 
 
-```{r moran I of SL residuals histogram, message=FALSE, warning=FALSE}
+```{r moran I of SL residuals histogram and scatterplot, fig.width=10, message=FALSE, warning=FALSE}
 
-ggplot(data.frame(res = SL$residuals), aes(x = res)) +
+plt3 <- ggplot(data.frame(res = SL$residuals), aes(x = res)) +
   geom_histogram(bins = 100, fill = "#283d3b") +
   geom_vline(xintercept =SL_moranMc$statistic, color = "#c44536", linetype = 'dashed', size = 1) +
-  labs(title = "Observed and Permuted Moran's I of Spatial Lag Regression Residuals",
+  labs(title = "Observed and Permuted Moran's I of SL Residuals",
        subtitle = "Observed Moran's I in Red",
        x = "Moran's I",
        y = "Count") +
@@ -570,17 +568,13 @@ ggplot(data.frame(res = SL$residuals), aes(x = res)) +
         axis.text.y=element_text(size=6), 
         axis.title=element_text(size=8))
 
-```
-
-```{r moran I of SL residuals scatter plot, message=FALSE, warning=FALSE}
-
-ggplot(data = data.frame(
+plt4 <- ggplot(data = data.frame(
   residuals =SL$residuals,
   spatial_lag = lag.listw(queenlist, SL$residuals)
 ), aes(x = residuals, y = spatial_lag)) +
   geom_point(color = "#283d3b", alpha = 0.9, size = 0.6) +  
   geom_smooth(method = "lm", color = "#c44536", se = FALSE) + 
-  labs(title = "Moran's I Scatter Plot for Spatial Lag Regression Residuals",
+  labs(title = "Moran's I Scatter Plot for SL Residuals",
        x = "Logged Median House Value",
        y = "Spatial Lag of LNMEDHVAL") +
   theme_light() +   
@@ -590,7 +584,9 @@ ggplot(data = data.frame(
         axis.text.y=element_text(size=6), 
         axis.title=element_text(size=8))
 
+plt3 + plt4
 ```
+
 
 ### Spatial Error Regression
 
@@ -666,12 +662,12 @@ SE_moranMc
 
 Both the residual histograms as well as the scatter plot support this conclusion here again. The histogram of residuals is approximately normally distributed, and the scatter plot of residuals against fitted values shows a much less evident trend compared to the OLS model. Therefore, all of these suggest that the spatial error model is a good fit for the data compared to OLS.
 
-```{r moran I of SE residuals histogram, message=FALSE, warning=FALSE}
+```{r moran I of SE residuals histogram and scatterplot, fig.width=10, message=FALSE, warning=FALSE}
 
-ggplot(data.frame(res = residuals(SE)), aes(x = res)) +
+plt5 <- ggplot(data.frame(res = residuals(SE)), aes(x = res)) +
   geom_histogram(bins = 100, fill = "#283d3b") +
   geom_vline(xintercept =SE_moranMc$statistic, color = "#c44536", linetype = 'dashed', size = 1) +
-  labs(title = "Observed and Permuted Moran's I of Spatial Error Regression Residuals",
+  labs(title = "Observed and Permuted Moran's I of SE Residuals",
        subtitle = "Observed Moran's I in Red",
        x = "Moran's I",
        y = "Count") +
@@ -682,20 +678,13 @@ ggplot(data.frame(res = residuals(SE)), aes(x = res)) +
         axis.text.y=element_text(size=6), 
         axis.title=element_text(size=8))
 
-
-```
-
-
-```{r moran I of SE residuals scatter plot, message=FALSE, warning=FALSE}
-
-
-ggplot(data = data.frame(
+plt6 <- ggplot(data = data.frame(
   residuals = residuals(SE),
   spatial_lag = lag.listw(queenlist, residuals(SE))
 ), aes(x = residuals, y = spatial_lag)) +
   geom_point(color = "#283d3b", alpha = 0.9, size = 0.6) +  
   geom_smooth(method = "lm", color = "#c44536", se = FALSE) + 
-  labs(title = "Moran's I Scatter Plot for Spatial Error Regression Residuals",
+  labs(title = "Moran's I Scatter Plot for SE Residuals",
        x = "Logged Median House Value",
        y = "Spatial Lag of LNMEDHVAL") +
   theme_light() +   
@@ -705,14 +694,12 @@ ggplot(data = data.frame(
         axis.text.y=element_text(size=6), 
         axis.title=element_text(size=8))
 
+plt5 + plt6
 ```
 
 It should be noted that here, we also compared spatial lag model with the spatial error model. The spatial lag model has a lower AIC (525) and SC (564) than the spatial error model (759 and 798, respectively), indicating a better fit. The log-likelihood of the spatial lag model (-256) is also less negative than that of the spatial lag error (-373), suggesting that the spatial lag model better explains the variability in the data. 
 
-## Geographically Weighted Regression Results - Ziyi
-
-Compare the (overall) R-squared of the GWR regression with the R-squared of the OLS regression. State which regression method seems to be doing a better job of explaining the variance in the dependent variable.
-Compare the Akaike Information Criteria (AIC and not AICc) of GWR with those of OLS, Spatial Lag and Spatial Error models. Which model seems to be doing a better job based on that (remember, the lower the Akaike Information Criterion, the better the fit).
+## Geographically Weighted Regression Results
 
 ```{r covert file structure, message=FALSE, warning=FALSE, include=FALSE}
 
@@ -742,12 +729,16 @@ bw <- readRDS(here("data", "bandwidth_gwr.rds"))
 gwrmodel <- readRDS(here("data", "gwrmodel.rds"))
 ```
 
+The \(R^2\) for the OLS regression model is 0.662, while the \(R^2\) (Quasi-global \(R^2\) ) for the GWR model is 0.848. The higher \(R^2\) value of the GWR model indicates that it does a better job of explaining the variance in the dependent variable \(\text{LNMEDHVAL}\) compared to the OLS model. This improvement suggests that the spatial variability captured by the GWR model provides a more accurate representation of the relationships between the predictors and the dependent variable, as GWR can account for spatial heterogeneity that OLS cannot.
+
+Based on the Akaike Information Criterion (AIC) values, the GWR model, with an AIC of 309, demonstrates the best fit among the models compared. The Spatial Lag model has a higher AIC of 525, followed by the Spatial Error model at 759, and the OLS regression model at 1435. Since a lower AIC indicates a better fit, the GWR model appears to be the most effective in explaining the variance in the data. This suggests that GWR, which accounts for spatial heterogeneity by allowing model coefficients to vary across locations, provides a more accurate and robust fit for this dataset than the other models.
+
 
 ```{r present gwr results, message=FALSE, warning=FALSE}
 gwrmodel
 ```
 
-Present and discuss the choropleth map of local R-squares. 
+The choropleth map of local \( R^2 \) values from the GWR model illustrates how the model explains variations in logged median house values across the city. Darker-colored areas, such as the northwestern, parts of the northeastern, and far western regions, indicate a stronger model fit, where the predictors in the model explain a larger proportion of the variability in house values. In contrast, lighter-colored areas, particularly in the northern and western parts of the city, show a weaker model fit, suggesting that the predictors are less effective in capturing the variability in these regions. 
 
 ```{r local R-squares choropleth, message=FALSE, warning=FALSE}
 
@@ -773,8 +764,9 @@ ggplot(data = regDatashps_sf) +
 
 ```
 
-Present the Moran’s I scatterplot of GWR residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals? What about the Spatial Lag and Spatial Error Residuals.
+The analysis indicates that the GWR model has successfully reduced spatial autocorrelation in the residuals compared to the OLS model. In the distribution of Moran’s I values for GWR residuals, the observed Moran’s I is close to zero, suggesting minimal spatial autocorrelation and aligning with the assumption of uncorrelated residuals. In contrast, the Moran’s I for the OLS residuals is both positive and statistically significant, indicating a stronger degree of spatial dependence. 
 
+The spatial lag model also reduces spatial autocorrelation in the residuals, although not as effectively as the GWR model. The spatial error model performs similarly, but the residuals exhibit slightly more spatial autocorrelation than those of the GWR model. Overall, these results suggest that the GWR model provides the best fit in terms of minimizing spatial autocorrelation, capturing local spatial variations more precisely than the spatial lag and spatial error models. This indicates that GWR is particularly effective for modeling spatial heterogeneity in this dataset.
 
 ```{r moran I of gwr residuals, message=FALSE, warning=FALSE}
 
@@ -783,12 +775,14 @@ GWR_moranMc
 
 ```
 
-```{r moran I of gwr residuals histogram, message=FALSE, warning=FALSE}
+The Moran's I scatter plot for the GWR residuals shows minimal spatial autocorrelation, as indicated by the nearly horizontal trend of the line, suggesting that the GWR model has successfully addressed much of the spatial dependency present in the data. This is consistent with the earlier histogram results, where the Moran's I value for GWR residuals was close to zero, further affirming that the model effectively captures local spatial variations in logged median house values. 
 
-ggplot(data.frame(res = gwrresults$gwr.e), aes(x = res)) +
+```{r moran I of gwr residuals histogram and scatterplot, fig.width=10, message=FALSE, warning=FALSE}
+
+plt7 <- ggplot(data.frame(res = gwrresults$gwr.e), aes(x = res)) +
   geom_histogram(bins = 100, fill = "#283d3b") +
   geom_vline(xintercept =GWR_moranMc$statistic, color = "#c44536", linetype = 'dashed', size = 1) +
-  labs(title = "Observed and Permuted Moran's I of Geographically Weighted Regression Residuals",
+  labs(title = "Observed and Permuted Moran's I of GWR Residuals",
        subtitle = "Observed Moran's I in Red",
        x = "Moran's I",
        y = "Count") +
@@ -799,18 +793,13 @@ ggplot(data.frame(res = gwrresults$gwr.e), aes(x = res)) +
         axis.text.y=element_text(size=6), 
         axis.title=element_text(size=8))
 
-```
-
-
-```{r moran I of gwr residuals scatter plot, message=FALSE, warning=FALSE}
-
-ggplot(data = data.frame(
+plt8 <- ggplot(data = data.frame(
   residuals = gwrresults$gwr.e,
   spatial_lag = lag.listw(queenlist, gwrresults$gwr.e)
 ), aes(x = residuals, y = spatial_lag)) +
   geom_point(color = "#283d3b", alpha = 0.9, size = 0.6) +  
   geom_smooth(method = "lm", color = "#c44536", se = FALSE) + 
-  labs(title = "Moran's I Scatter Plot for Geographically Weighted Regression Residuals",
+  labs(title = "Moran's I Scatter Plot for GWR Residuals",
        x = "Logged Median House Value",
        y = "Spatial Lag of LNMEDHVAL") +
   theme_light() +   
@@ -820,11 +809,18 @@ ggplot(data = data.frame(
         axis.text.y=element_text(size=6), 
         axis.title=element_text(size=8))
 
-
-
+plt7 + plt8
 ```
 
-Present the maps of coefficients divided by the standard error that you created earlier. Are there locations in the city where the relationships between each of the predictors and the dependent variable possibly significant?
+Looking at each predictors in detail, the vacancy rate generally has a negative impact on housing values, with significant negative effects observed in Center City, northwestern areas, parts of the northeastern region, and the western part of the city. However, there is a localized area in southern Center City where vacancy rates unexpectedly have a positive impact on housing values.
+
+Single-family housing, in general, positively impacts housing values, particularly in the far northeast and far northwest areas, where this effect is more pronounced. Conversely, in some parts of the city—such as eastern Philadelphia, parts of the west, and sections of the south—the impact of single-family housing is negative and statistically significant.
+
+The percentage of residents with a bachelor’s degree generally has a positive impact on housing values, with no areas showing a negative relationship across the city. This positive influence is especially statistically significant in the northern and northeastern parts of the city.
+
+Finally, the poverty rate generally has a negative effect on housing values. This effect is more statistically significant in the southern, eastern, and northwestern parts of the city. 
+
+Overall, these spatial variations highlight how different factors affect housing values uniquely across Philadelphia, emphasizing the importance of localized analysis in understanding property dynamics.
 
 ```{r ratio of coefficients to standard error, message=FALSE, warning=FALSE, include=FALSE}
 
@@ -935,16 +931,23 @@ p1 + p2 + p3 + p4 +
   plot_layout(ncol = 2)
 ```
 
-# Discussion - Emily 
+# Discussion
 
-a)	In a couple sentences, recap what you did in the paper and your findings. Discuss what conclusions you can draw, and which of the four regression methods (OLS, Spatial Lag, Spatial Error, GWR) was the best, based on the results. 
+In this report, we conducted a comparative analysis of four regression methods—Ordinary Least Squares (OLS), Spatial Lag, Spatial Error, and Geographically Weighted Regression (GWR)—to evaluate their effectiveness in explaining the variance in the dependent variable, \(\text{LNMEDHVAL}\). Our findings indicate that the GWR model exhibited the highest explanatory power, with a quasi-global \(R^2\) of 0.84, compared to the OLS \(R^2\) of 0.662, suggesting that GWR is better suited to capture local variations in the data.
 
-b)	Give a brief description of the limitations (i.e., which assumptions were not met).
+The Akaike Information Criterion (AIC) further supports the suitability of GWR, which achieved an AIC of 309, in contrast to the OLS AIC of 1435, the Spatial Lag AIC of 525, and the Spatial Error AIC of 759. Nevertheless, the lower AIC values in spatial lag and spatial error regression still indicate that both models provide are much better fit than the OLS model, especially the spatial lag model. Another observation is the reduction in the coefficient magnitudes for the predictors in the spatial lag and spatial error models compared to OLS, suggesting that they provide more conservative estimates of the predictors' effects on median home values for accounting spatial autocorrelation. Yet, overall, our analysis demonstrates that the GWR method is the most effective for this dataset. 
 
-c)	Discuss what is meant by weighted (i.e., spatially lagged) residuals, as opposed to spatial lag [model] residuals. This is a common source of confusion, and being able to explain this in your own words is important.
-Make sure that you are using the correct terminology throughout the report. 
+While GWR offers several advantages, such as capturing spatial heterogeneity and providing localized insights, it also has limitations, which is why a lot of spatial statisticians use it only for data exploration rather than for modeling. Most notably, a lot of assumptions we have in OLS still hold in GWR, such as linearity, homoscedasticity, and normality of errors. As an example, from our previous assignment, we know that there's multicollinearity between predictors - higher education attainment is clearly associated with lower poverty level. As such, our current GWR model clearly does not account for that. We also know that some of our predictor variables, such as \(\text{PCTSINGLES}\) and \(\text{PCTBACHMOR}\) are not normally distributed, which violates the assumption. 
 
-d)	Mention why ArcGIS is problematic for GWR.
+Other than that, GWR requires at least 300 observations and user's choice of bandwidth can significantly affect results. In our example we have way more than 300 observations and R automatically picked the bandwidths for us, still we should be cautious about the results.
+
+We also need to be careful about the the use of term between **spatially lagged residuals** and **spatial lag model residuals**. The former term, **spatially lagged residuals**, refers to a series of residuals that take into account the influence of nearby observations through a weighting scheme. The latter term, **spatial lag model residuals** refers to the error terms from the result of a model that incorporates a spatial lag term (which is the values of the dependent variable from neighboring observations). 
+
+And lastly, we would like to highlight some limitations of using ArcGIS for GWR. The major issues is that ArcGIS does not always allow for the same level of flexibility in selecting bandwidth methods or kernel functions as R, and it has a very different and very confusing way of optimizing bandwidth. In addition, ArcGIS Pro does not give AIC, just AICc, which makes it difficult to compare GWR output to other models. More importantly, in the current and earlier versions of ArcGIS Pro, some local R-squares are negative, which is not possible in a regression model. Therefore, we recommend using R for GWR analysis to avoid these limitations and to have more control over the model selection process.
+
+
+
+
 
 # Reference
 
